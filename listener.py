@@ -270,7 +270,7 @@ class Listener(commands.Cog):
                     user_to_dm = self.bot.get_user(user_to_dm)
 
                     # TODO: Writeups
-                    writeup = f'{outcome} (WRITEUP WILL GO HERE)\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome}\n\n{mention_role.mention}'
+                    writeup = f'{outcome.name} (WRITEUP WILL GO HERE)\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
                     if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
                         minutes_to_add = random.randint(1, 6)
