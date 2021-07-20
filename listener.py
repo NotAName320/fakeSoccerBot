@@ -285,7 +285,7 @@ class Listener(commands.Cog):
                         writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention} getting the ball first.'
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
                         user_to_dm = self.bot.get_user(user_to_dm)
-                    extratime2 = 0 if gameinfo['extratime2'] is None else gameinfo['extratime1']
+                    extratime2 = 0 if gameinfo['extratime2'] is None else gameinfo['extratime2']
                     if gameinfo['seconds'] >= (5400+(extratime1*60)) and gameinfo['extratime2'] is None:
                         minutes_to_add = random.randint(1, 6)
                         await self.bot.write(f'UPDATE games SET extratime2 = {minutes_to_add} WHERE gameid = {target_game_off[0]}')
