@@ -58,7 +58,7 @@ async def login():
 
     # Sets bot variable to be accessed later.
     activity = discord.Activity(type=discord.ActivityType.watching, name='your soccer games!')
-    client = Bot(command_prefix='!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
+    client = Bot(command_prefix='t!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
 
     @client.event
     async def on_ready():
