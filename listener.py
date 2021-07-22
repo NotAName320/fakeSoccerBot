@@ -260,7 +260,7 @@ class Listener(commands.Cog):
 
                     result = DBResult(result=outcome, clock_use=clock_mode)
                     await result.send(self.bot, gameid=target_game_off[0], home_away=target_game_off[3].lower())
-                    gameinfo = await self.bot.db.fetchrow(f'SELECT homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
+                    gameinfo = await self.bot.db.fetchrow(f'SELECT homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
                     if gameinfo['waitingon'] == 'HOME':
                         mention_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
@@ -276,10 +276,11 @@ class Listener(commands.Cog):
                         minutes_to_add = random.randint(1, 6)
                         await self.bot.write(f'UPDATE games SET extratime1 = {minutes_to_add} WHERE gameid = {target_game_off[0]}')
                         writeup += f'\n\nStoppage time for the first half has started. There will be {minutes_to_add} extra minutes.'
-                    elif gameinfo['seconds'] >= (2700+(extratime1*60)):
+                    elif gameinfo['seconds'] >= (2700+(extratime1*60)) and not gameinfo['secondhalf']:
                         await self.bot.write(f"UPDATE games SET gamestate = 'MIDFIELD', "
                                              f"def_off = 'DEFENSE'::def_off, "
-                                             f"waitingon = 'HOME' "
+                                             f"waitingon = 'HOME', "
+                                             f"secondhalf = true "
                                              f"WHERE gameid = {target_game_off[0]}")
                         away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                         writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention} getting the ball first.'
