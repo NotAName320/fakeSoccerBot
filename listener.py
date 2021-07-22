@@ -273,6 +273,7 @@ class Listener(commands.Cog):
                     # TODO: Fix games ending slightly early due to not accounting for extra time overflow
                     writeup = f'{outcome} (WRITEUP WILL GO HERE)\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome}\n\n{mention_role.mention}'
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
+                    waitingon = gameinfo['waitingon']
                     if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
                         minutes_to_add = random.randint(1, 6)
                         await self.bot.write(f'UPDATE games SET extratime1 = {minutes_to_add} WHERE gameid = {target_game_off[0]}')
@@ -287,6 +288,7 @@ class Listener(commands.Cog):
                         writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention} getting the ball first.'
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
                         user_to_dm = self.bot.get_user(user_to_dm)
+                        waitingon = 'HOME'
                     extratime2 = 0 if gameinfo['extratime2'] is None else gameinfo['extratime2']
                     if gameinfo['seconds'] >= (5400+(extratime1*60)) and gameinfo['extratime2'] is None:
                         minutes_to_add = random.randint(1, 6)
@@ -315,7 +317,7 @@ class Listener(commands.Cog):
 
                     await message.reply(writeup)
 
-                    self.defcache[target_game_off[4]] = (self.offcache[target_game_off[4]][0], self.offcache[target_game_off[4]][1], self.offcache[target_game_off[4]][2], gameinfo['waitingon'], target_game_off[4])
+                    self.defcache[target_game_off[4]] = (self.offcache[target_game_off[4]][0], self.offcache[target_game_off[4]][1], self.offcache[target_game_off[4]][2], waitingon, target_game_off[4])
                     del self.offcache[target_game_off[4]]
                     game_time = seconds_to_time(gameinfo['seconds'], gameinfo['extratime1'], gameinfo['extratime2'])
                     await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo['hometeam'].upper(),
