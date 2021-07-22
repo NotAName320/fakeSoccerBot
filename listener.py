@@ -231,7 +231,11 @@ class Listener(commands.Cog):
                     ranges = None
 
                     if field_position == 'SHOOTOUT':
-                        # TODO: Shootout code
+                        if diff < list(PENALTY.keys())[-1]:
+                            goals_to_add = 1
+                        else:
+                            goals_to_add = 0
+                        shootoutdata = await self.bot.db.fetchrow(f'SELECT ')
                         pass
 
                     if field_position == 'PENALTY':
