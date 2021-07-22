@@ -222,7 +222,7 @@ class GameManagement(commands.Cog, name='Game Management'):
         if game['def_off'] == 'DEFENSE':
             waitingon = game['waitingon']
         else:
-            waitingon = 'HOME' if game['waitingon'] is 'AWAY' else 'AWAY'
+            waitingon = 'HOME' if game['waitingon'] == 'AWAY' else 'AWAY'
         await self.bot.write(f"UPDATE games SET "
                              f"def_off = 'DEFENSE'::def_off, "
                              f"waitingon = '{waitingon}' "
