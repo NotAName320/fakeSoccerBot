@@ -61,10 +61,10 @@ MIDFIELD: RangeDict = {
     0: Results.GOAL,
     11: Results.ATTACK,
     151: Results.MIDFIELD,
-    226: Results.TURNOVER_DEFENSE,
-    256: Results.TURNOVER_MIDFIELD,
-    351: Results.TURNOVER_ATTACK,
-    471: Results.TURNOVER_FREE_KICK,
+    276: Results.TURNOVER_DEFENSE,
+    326: Results.TURNOVER_MIDFIELD,
+    401: Results.TURNOVER_ATTACK,
+    470: Results.TURNOVER_FREE_KICK,
     498: Results.OPPOSING_GOAL
 }
 
@@ -73,8 +73,8 @@ DEFENSE: RangeDict = {
     1: Results.ATTACK,
     51: Results.MIDFIELD,
     226: Results.DEFENSE,
-    326: Results.TURNOVER_MIDFIELD,
-    401: Results.TURNOVER_ATTACK,
+    351: Results.TURNOVER_MIDFIELD,
+    421: Results.TURNOVER_ATTACK,
     470: Results.TURNOVER_FREE_KICK,
     495: Results.OPPOSING_GOAL
 }
@@ -86,7 +86,7 @@ FREE_KICK: RangeDict = {
     226: Results.TURNOVER_DEFENSE,
     351: Results.TURNOVER_MIDFIELD,
     470: Results.TURNOVER_DEFENSE,
-    500: Results.OPPOSING_GOAL
+    499: Results.OPPOSING_GOAL
 }
 
 PENALTY: RangeDict = {

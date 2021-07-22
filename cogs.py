@@ -27,6 +27,7 @@ import inspect
 import discord
 from discord.ext import commands
 
+import utils
 from discord_db_client import Bot
 from listener import DEFENSIVE_MESSAGE
 
@@ -208,6 +209,32 @@ class GameManagement(commands.Cog, name='Game Management'):
         scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
         await scores_channel.send(f'GAME ABANDONED: {home_role.mention} {game["homescore"]}-{game["awayscore"]} {away_role.mention}')
         await ctx.reply('Game Abandoned. You may delete this channel at any time.')
+
+    @commands.command(name='rerun')
+    @commands.has_role('bot operator')
+    async def rerun(self, ctx):
+        game = await self.bot.db.fetchrow(f'SELECT hometeam, awayteam, homeroleid, awayroleid, homescore, awayscore, seconds, waitingon, def_off FROM games WHERE channelid = {ctx.channel.id}')
+        try:
+            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+        except TypeError:
+            return await ctx.send('Error: Channel does not appear to be game channel.')
+        if game['def_off'] == 'DEFENSE':
+            waitingon = game['waitingon']
+        else:
+            waitingon = 'HOME' if game['waitingon'] is 'AWAY' else 'AWAY'
+        await self.bot.write(f"UPDATE games SET "
+                             f"def_off = 'DEFENSE'::def_off, "
+                             f"waitingon = '{waitingon}' "
+                             f"WHERE channelid = {ctx.channel.id}")
+        listener_cog = self.bot.get_cog('Listener')
+        defensive_user_id = await listener_cog.user_id_from_team(game['hometeam'] if waitingon == 'HOME' else game['awayteam'])
+        await self.bot.get_user(defensive_user_id).send(DEFENSIVE_MESSAGE.format(hometeam=game['hometeam'].upper(),
+                                                                                 awayteam=game['awayteam'].upper(),
+                                                                                 homescore=game['homescore'],
+                                                                                 awayscore=game['awayscore'],
+                                                                                 game_time=utils.seconds_to_time(game['seconds'])))
+        await ctx.reply(f'{home_role.mention} {away_role.mention} Current play is being rerun. Awaiting defensive number.')
 
 
 class Eval(commands.Cog):
