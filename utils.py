@@ -31,10 +31,10 @@ def seconds_to_time(seconds: int, extra1: Optional[int] = None, extra2: Optional
         extra1 = 0
     if extra2 is None:
         extra2 = 0
-    if 2700 + (extra1 * 60) > seconds > 2700:
+    if 2700 + (extra1 * 60) > seconds >= 2700:
         m, s = divmod(seconds - 2700, 60)
         return f'45:00+{m:d}:{s:02d}'
-    if 5400 + (extra2 * 60) > seconds - (extra1 * 60) > 5400:
+    if 5400 + (extra2 * 60) > seconds - (extra1 * 60) >= 5400:
         m, s = divmod(seconds - 5400, 60)
         return f'90:00+{m:d}:{s:02d}'
     seconds -= (extra1 * 60) + (extra2 * 60)
