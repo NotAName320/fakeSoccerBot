@@ -101,13 +101,14 @@ class Teams(commands.Cog):
 
 
 class GameManagement(commands.Cog, name='Game Management'):
-    """Allows bot operators to start and abandon games."""
+    """Allows bot operators to start, abandon, and rerun games."""
     def __init__(self, bot: Bot):
         self.bot = bot
 
     @commands.command(name='startgame', aliases=['startmatch'])
     @commands.has_role('bot operator')
     async def start_game(self, ctx, hometeam: str, awayteam: str):
+        """Starts a game between two teams from the database."""
         hometeam, awayteam = hometeam.lower(), awayteam.lower()
 
         if hometeam == awayteam:
@@ -153,6 +154,7 @@ class GameManagement(commands.Cog, name='Game Management'):
     @commands.command(name='startscrim')
     @commands.has_role('bot operator')
     async def start_scrim(self, ctx, hometeam: str, awayteam: str):
+        """Starts a scrimmage between two teams from the database."""
         hometeam, awayteam = hometeam.lower(), awayteam.lower()
 
         if hometeam == awayteam:
@@ -200,6 +202,7 @@ class GameManagement(commands.Cog, name='Game Management'):
     @commands.command(name='startgameovertime', aliases=['startmatchovertime', 'startot'])
     @commands.has_role('bot operator')
     async def start_game_overtime(self, ctx, hometeam: str, awayteam: str):
+        """Start a game with overtime rules using two teams from the database."""
         hometeam, awayteam = hometeam.lower(), awayteam.lower()
 
         if hometeam == awayteam:
@@ -247,6 +250,7 @@ class GameManagement(commands.Cog, name='Game Management'):
     @commands.command(name='abandongame', aliases=['stopgame', 'endgame'])
     @commands.has_role('bot operator')
     async def abandon_game(self, ctx):
+        """Abandons a game in a channel."""
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, homescore, awayscore FROM games WHERE channelid = {ctx.channel.id}')
         try:
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
@@ -261,6 +265,7 @@ class GameManagement(commands.Cog, name='Game Management'):
     @commands.command(name='rerun')
     @commands.has_role('bot operator')
     async def rerun(self, ctx):
+        """Reruns the play. Asks the defense for the defensive number again."""
         game = await self.bot.db.fetchrow(f'SELECT hometeam, awayteam, homeroleid, awayroleid, homescore, awayscore, seconds, waitingon, def_off FROM games WHERE channelid = {ctx.channel.id}')
         try:
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
