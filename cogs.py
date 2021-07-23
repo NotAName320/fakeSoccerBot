@@ -150,7 +150,7 @@ class GameManagement(commands.Cog, name='Game Management'):
         else:
             return await ctx.reply(f'Error: One or both of your teams does not exist. Run command {self.bot.command_prefix}teamlist for a list of teams.')
 
-    @commands.command(name='startscrim', aliases=['startmatch'])
+    @commands.command(name='startscrim')
     @commands.has_role('bot operator')
     async def start_scrim(self, ctx, hometeam: str, awayteam: str):
         hometeam, awayteam = hometeam.lower(), awayteam.lower()
