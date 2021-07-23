@@ -260,7 +260,7 @@ class Listener(commands.Cog):
 
                     result = DBResult(result=outcome, clock_use=clock_mode)
                     await result.send(self.bot, gameid=target_game_off[0], home_away=target_game_off[3].lower())
-                    gameinfo = await self.bot.db.fetchrow(f'SELECT homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
+                    gameinfo = await self.bot.db.fetchrow(f'SELECT isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
                     if gameinfo['waitingon'] == 'HOME':
                         mention_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
@@ -312,7 +312,10 @@ class Listener(commands.Cog):
                             writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
                             del self.offcache[target_game_off[4]]
                             score_channel = discord.utils.get(message.guild.channels, name='scores')
-                            await score_channel.send(f'{home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
+                            if gameinfo['isscrimmage']:
+                                await score_channel.send(f'SCRIMMAGE: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
+                            else:
+                                await score_channel.send(f'FINAL: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
                             return await message.reply(writeup)
 
                     await message.reply(writeup)

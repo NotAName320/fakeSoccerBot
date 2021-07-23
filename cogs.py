@@ -163,7 +163,7 @@ class GameManagement(commands.Cog, name='Game Management'):
 
         if home_team_exists and away_team_exists:
             games_category = discord.utils.get(ctx.guild.categories, name='scrimmages')
-            channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}', category=games_category)
+            channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}-scrim', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
             away_team = await self.bot.db.fetchrow('SELECT teamname, manager FROM teams WHERE teamid = $1', awayteam)
@@ -192,7 +192,7 @@ class GameManagement(commands.Cog, name='Game Management'):
                                                              homescore='0',
                                                              awayscore='0',
                                                              game_time='0:00'))
-            return await ctx.reply(f'Game successfully started in {channel.mention}.')
+            return await ctx.reply(f'Scrimmage successfully started in {channel.mention}.')
         else:
             return await ctx.reply(
                 f'Error: One or both of your teams does not exist. Run command {self.bot.command_prefix}teamlist for a list of teams.')
