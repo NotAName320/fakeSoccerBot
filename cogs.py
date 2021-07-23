@@ -31,6 +31,8 @@ import utils
 from discord_db_client import Bot
 from listener import DEFENSIVE_MESSAGE
 
+RANGES_IMAGE_URL = 'https://cdn.discordapp.com/attachments/843971721697427519/856397192573747200/image0.png'
+
 
 class Teams(commands.Cog):
     """Gives information about teams from the database, and also allows bot operators to create and delete teams."""
@@ -131,7 +133,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             listener_cog = self.bot.get_cog('Listener')
             listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY')
 
-            message = await channel.send('https://cdn.discordapp.com/attachments/843971721697427519/856397192573747200/image0.png')
+            message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
             await channel.send(f'Game has started between {home_role.mention} and {away_role.mention}\n\n'
                                f'{home_role.mention} gets the ball first.\n\n'
@@ -147,6 +149,53 @@ class GameManagement(commands.Cog, name='Game Management'):
             return await ctx.reply(f'Game successfully started in {channel.mention}.')
         else:
             return await ctx.reply(f'Error: One or both of your teams does not exist. Run command {self.bot.command_prefix}teamlist for a list of teams.')
+
+    @commands.command(name='startscrim', aliases=['startmatch'])
+    @commands.has_role('bot operator')
+    async def start_scrim(self, ctx, hometeam: str, awayteam: str):
+        hometeam, awayteam = hometeam.lower(), awayteam.lower()
+
+        if hometeam == awayteam:
+            return await ctx.reply('Error: Cannot start game with same two teams.')
+
+        home_team_exists = await self.bot.db.fetchval('SELECT EXISTS(SELECT 1 FROM teams WHERE teamid = $1)', hometeam)
+        away_team_exists = await self.bot.db.fetchval('SELECT EXISTS(SELECT 1 FROM teams WHERE teamid = $1)', awayteam)
+
+        if home_team_exists and away_team_exists:
+            games_category = discord.utils.get(ctx.guild.categories, name='scrimmages')
+            channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}', category=games_category)
+
+            home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
+            away_team = await self.bot.db.fetchrow('SELECT teamname, manager FROM teams WHERE teamid = $1', awayteam)
+
+            home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
+            away_role = discord.utils.get(ctx.guild.roles, name=away_team['teamname'])
+
+            query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, isscrimmage) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', true)"
+            await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
+
+            gameid = await self.bot.db.fetchval(
+                f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
+            listener_cog = self.bot.get_cog('Listener')
+            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY')
+
+            message = await channel.send(RANGES_IMAGE_URL)
+            await message.pin()
+            await channel.send(f'Game has started between {home_role.mention} and {away_role.mention}\n\n'
+                               f'{home_role.mention} gets the ball first.\n\n'
+                               f'{hometeam.upper()} 0-0 {awayteam.upper()} '
+                               f'0:00\n\n'
+                               f'Waiting on {away_role.mention} for defensive number')
+            away_manager = self.bot.get_user(away_team['manager'])
+            await away_manager.send(DEFENSIVE_MESSAGE.format(hometeam=hometeam.upper(),
+                                                             awayteam=awayteam.upper(),
+                                                             homescore='0',
+                                                             awayscore='0',
+                                                             game_time='0:00'))
+            return await ctx.reply(f'Game successfully started in {channel.mention}.')
+        else:
+            return await ctx.reply(
+                f'Error: One or both of your teams does not exist. Run command {self.bot.command_prefix}teamlist for a list of teams.')
 
     @commands.command(name='startgameovertime', aliases=['startmatchovertime', 'startot'])
     @commands.has_role('bot operator')
@@ -169,7 +218,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
             away_role = discord.utils.get(ctx.guild.roles, name=away_team['teamname'])
 
-            query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, overtimegame) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', t)"
+            query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, overtimegame) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', true)"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
 
             gameid = await self.bot.db.fetchval(
@@ -177,8 +226,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             listener_cog = self.bot.get_cog('Listener')
             listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY')
 
-            message = await channel.send(
-                'https://cdn.discordapp.com/attachments/843971721697427519/856397192573747200/image0.png')
+            message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
             await channel.send(f'Game has started between {home_role.mention} and {away_role.mention}\n\n'
                                f'{home_role.mention} gets the ball first.\n\n'
