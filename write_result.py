@@ -76,5 +76,6 @@ class DBResult:
                            f"seconds = seconds + {seconds_to_add}, "
                            f"gamestate = '{field_position}', "
                            f"def_off = 'DEFENSE'::def_off, "
-                           f"waitingon = '{waitingon.upper()}' "
+                           f"waitingon = '{waitingon.upper()}',"
+                           f"deadline = 'now'::timestamp + INTERVAL '1 day' "
                            f"WHERE gameid = {gameid}")
