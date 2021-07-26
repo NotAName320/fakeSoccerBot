@@ -260,7 +260,7 @@ class Listener(commands.Cog):
 
                     result = DBResult(result=outcome, clock_use=clock_mode)
                     await result.send(self.bot, gameid=target_game_off[0], home_away=target_game_off[3].lower())
-                    gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
+                    gameinfo = await self.bot.db.fetchrow(f'SELECT isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
                     home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                     away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                     if gameinfo['waitingon'] == 'HOME':
@@ -271,9 +271,9 @@ class Listener(commands.Cog):
                         user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
                     user_to_dm = self.bot.get_user(user_to_dm)
 
-                    writeup_text = await self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{gameinfo['gamestate']}' AND result = '{outcome.name}' ORDER BY random() LIMIT 1")
+                    writeup_text = await self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{field_position}' AND result = '{outcome.name}' ORDER BY random() LIMIT 1")
                     if writeup_text is None:
-                        writeup_text = "writeup machine broke"
+                        writeup_text = "If you're seeing this, the writeup is glitched. Oh well."
                     # TODO: Fix games ending slightly early due to not accounting for extra time overflow
                     writeup = f'{writeup_text.format(offteam=home_role.mention if target_game_off[3] == "HOME" else away_role.mention, defteam=home_role.mention if target_game_off[3] == "AWAY" else away_role.mention)}\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
