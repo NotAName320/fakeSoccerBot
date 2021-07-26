@@ -260,7 +260,7 @@ class Listener(commands.Cog):
 
                     result = DBResult(result=outcome, clock_use=clock_mode)
                     await result.send(self.bot, gameid=target_game_off[0], home_away=target_game_off[3].lower())
-                    gameinfo = await self.bot.db.fetchrow(f'SELECT isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
+                    gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
                     if gameinfo['waitingon'] == 'HOME':
                         mention_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
@@ -269,9 +269,9 @@ class Listener(commands.Cog):
                         user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
                     user_to_dm = self.bot.get_user(user_to_dm)
 
-                    # TODO: Writeups
+                    writeup_text = self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{gameinfo['gamestate']}' AND result = '{outcome.name}' ORDER BY random() LIMIT 1")
                     # TODO: Fix games ending slightly early due to not accounting for extra time overflow
-                    writeup = f'{outcome} (WRITEUP WILL GO HERE)\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
+                    writeup = f'{writeup_text}\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
                     waitingon = gameinfo['waitingon']
                     if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
