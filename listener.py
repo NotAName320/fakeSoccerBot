@@ -272,6 +272,8 @@ class Listener(commands.Cog):
                     user_to_dm = self.bot.get_user(user_to_dm)
 
                     writeup_text = await self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{gameinfo['gamestate']}' AND result = '{outcome.name}' ORDER BY random() LIMIT 1")
+                    if writeup_text is None:
+                        writeup_text = "writeup machine broke"
                     # TODO: Fix games ending slightly early due to not accounting for extra time overflow
                     writeup = f'{writeup_text.format(offteam=home_role.mention if target_game_off[3] == "HOME" else away_role.mention, defteam=home_role.mention if target_game_off[3] == "AWAY" else away_role.mention)}\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
