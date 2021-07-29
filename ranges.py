@@ -81,10 +81,10 @@ DEFENSE: RangeDict = {
 
 FREE_KICK: RangeDict = {
     0: Results.GOAL,
-    26: Results.ATTACK,
-    151: Results.MIDFIELD,
-    226: Results.TURNOVER_DEFENSE,
-    351: Results.TURNOVER_MIDFIELD,
+    36: Results.ATTACK,
+    226: Results.MIDFIELD,
+    301: Results.TURNOVER_DEFENSE,
+    376: Results.TURNOVER_MIDFIELD,
     470: Results.TURNOVER_ATTACK,
     499: Results.OPPOSING_GOAL
 }
