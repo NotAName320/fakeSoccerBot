@@ -297,7 +297,7 @@ class Listener(commands.Cog):
                         minutes_to_add = random.randint(1, 6)
                         await self.bot.write(f'UPDATE games SET extratime2 = {minutes_to_add} WHERE gameid = {target_game_off[0]}')
                         writeup += f'\n\nStoppage time for the second half has started. There will be {minutes_to_add} extra minutes.'
-                    if gameinfo['seconds'] >= (5400+(extratime1*60)+(extratime2*60)):
+                    elif gameinfo['seconds'] >= (5400+(extratime1*60)+(extratime2*60)):
                         if gameinfo['overtimegame']:
                             pass  # TODO
                         else:
