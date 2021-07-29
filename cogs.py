@@ -87,17 +87,16 @@ class Teams(commands.Cog):
         await member.add_roles(new_role)
         await ctx.reply(f'Success: New team {team_name} with manager {member} has been created.')
 
-    @commands.command(name='deleteteam', aliases=['removeteam'])
+    @commands.command(name='removeteam', aliases=['deleteteam'])
     @commands.has_role('bot operator')
-    async def remove_team(self, ctx, member: discord.Member):
+    async def remove_team(self, ctx, teamid: str):
         """Deletes a team from the database."""
         # TODO: Automatically abandon games when the team is deleted.
-        userteam = await self.bot.db.fetch('SELECT teamname FROM teams WHERE manager = $1', member.id)
-        await self.bot.write('DELETE FROM teams WHERE manager = $1', member.id)
-        for team in userteam:
-            role = (discord.utils.get(ctx.guild.roles, name=team['teamname']))
-            await role.delete()
-        await ctx.reply(f'Success: Team belonging to user {member} has been deleted.')
+        userteam = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', teamid)
+        await self.bot.write('DELETE FROM teams WHERE teamid = $1', teamid)
+        role = (discord.utils.get(ctx.guild.roles, name=userteam))
+        await role.delete()
+        await ctx.reply(f'Success: Team {userteam} has been deleted.')
 
 
 class GameManagement(commands.Cog, name='Game Management'):
