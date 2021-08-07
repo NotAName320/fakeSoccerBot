@@ -82,7 +82,40 @@ class Listener(commands.Cog):
         games = await self.bot.db.fetch("SELECT gameid, deadline FROM games WHERE gamestate != 'FINAL'::gamestate AND gamestate != 'ABANDONED'::gamestate AND gamestate != 'FORFEIT'::gamestate")
         for game in games:
             if game['deadline'] < PST.localize(datetime.datetime.now()):
-                gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
+                gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
+                if gameinfo['gamestate'] == 'SHOOTOUT':
+                    if gameinfo['waitingon'] == 'HOME':
+                        await self.bot.write(f"UPDATE games SET "
+                                             f"gamestate = 'FORFEIT', "
+                                             f"awayscore = 3, "
+                                             f"homescore = 0, "
+                                             f"homedelays = 3 "
+                                             f"WHERE gameid = {game['gameid']}")
+                        game_channel = self.bot.get_channel(gameinfo['channelid'])
+                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        await game_channel.send(f'{home_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
+                                                f'The game is over! {away_role.mention} has won!\n\n'
+                                                f'The score is 0-3.')
+                        score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
+                        return await score_channel.send(f'SHOOTOUT FORFEIT: {home_role.mention} 0-3 {away_role.mention}')
+                    else:
+                        await self.bot.write(f"UPDATE games SET "
+                                             f"gamestate = 'FORFEIT', "
+                                             f"homescore = 3, "
+                                             f"awayscore = 0, "
+                                             f"awaydelays = 3 "
+                                             f"WHERE gameid = {game['gameid']}")
+                        game_channel = self.bot.get_channel(gameinfo['channelid'])
+                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        await game_channel.send(
+                            f'{away_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
+                            f'The game is over! {home_role.mention} has won!\n\n'
+                            f'The score is 0-3.')
+                        score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
+                        return await score_channel.send(
+                            f'SHOOTOUT FORFEIT: {home_role.mention} 0-3 {away_role.mention}')
                 if gameinfo['waitingon'] == 'HOME':
                     if gameinfo['homedelays'] == 2:
                         await self.bot.write(f"UPDATE games SET "
@@ -96,7 +129,7 @@ class Listener(commands.Cog):
                         away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         await game_channel.send(f'{home_role.mention} has reached the limit of 3 delays of game.\n\n'
                                                 f'The game is over! {away_role.mention} has won!\n\n'
-                                                f'The score is 0-3.')
+                                                f'The score is 3-0.')
                         score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
                         return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} 0-3 {away_role.mention}')
                     else:
