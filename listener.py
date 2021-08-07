@@ -23,14 +23,14 @@ SOFTWARE.
 """
 
 import datetime
-import pytz
 import random
 
 import discord
 from discord.ext import commands, tasks
+import pytz  # TODO: Eliminate need for this module? discord.py 2.0 (when it is officially released) will solve this anyways
 
 from discord_db_client import Bot
-from ranges import Results, ATTACK, MIDFIELD, DEFENSE, FREE_KICK, PENALTY
+from ranges import ATTACK, MIDFIELD, DEFENSE, FREE_KICK, PENALTY
 from utils import seconds_to_time, calculateDiff
 from write_result import ClockUse, DBResult
 

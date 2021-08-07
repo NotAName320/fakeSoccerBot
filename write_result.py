@@ -37,11 +37,13 @@ class ClockUse(Enum):
 
 
 class DBResult:
+    """Class that temporarily stores results and commits them to the database, handling a little bit of game logic on the way,"""
     def __init__(self, result: Results, clock_use: ClockUse = ClockUse.NORMAL):
         self.result = result
         self.clock_use = clock_use
 
     async def send(self, client: Bot, gameid: int, home_away: Literal['home', 'away']):
+        """Commits result to the database."""
         if self.clock_use == ClockUse.HURRY:
             seconds_to_add = 30
         elif self.clock_use == ClockUse.CHEW:

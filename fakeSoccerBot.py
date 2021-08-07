@@ -70,7 +70,7 @@ async def login():
     @client.event
     async def on_command_error(ctx, error):
         # Basic error handling, including generic messages to send for common errors
-        error = getattr(error, 'original', error)
+        error: Exception = getattr(error, 'original', error)
 
         if isinstance(error, commands.CommandNotFound):
             notFoundMessage = f"Your command was not recognized. Please refer to {client.command_prefix}help for more info."
