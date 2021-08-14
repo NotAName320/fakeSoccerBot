@@ -284,7 +284,7 @@ class GameManagement(commands.Cog, name='Game Management'):
         else:
             writeup += f' {home_role.mention} and {away_role.mention} drew by a score of {game["homescore"]}-{game["awayscore"]}.'
         writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
-        await ctx.reply('Drive home safely.')
+        await ctx.reply(writeup)
 
     @commands.command(name='rerun')
     @commands.has_role('bot operator')
