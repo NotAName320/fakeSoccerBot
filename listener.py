@@ -363,14 +363,18 @@ class Listener(commands.Cog):
 
                     await message.reply(writeup)
 
-                    self.defcache[target_game_off[4]] = (self.offcache[target_game_off[4]][0], self.offcache[target_game_off[4]][1], self.offcache[target_game_off[4]][2], waitingon, target_game_off[4])
-                    del self.offcache[target_game_off[4]]
-                    game_time = seconds_to_time(gameinfo['seconds'], gameinfo['extratime1'], gameinfo['extratime2'])
-                    await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo['hometeam'].upper(),
-                                                                   awayteam=gameinfo['awayteam'].upper(),
-                                                                   homescore=gameinfo['homescore'],
-                                                                   awayscore=gameinfo['awayscore'],
-                                                                   game_time=game_time))
+                    try:
+                        self.defcache[target_game_off[4]] = (self.offcache[target_game_off[4]][0], self.offcache[target_game_off[4]][1], self.offcache[target_game_off[4]][2], waitingon, target_game_off[4])
+                        del self.offcache[target_game_off[4]]
+                    except KeyError:
+                        pass
+                    finally:
+                        game_time = seconds_to_time(gameinfo['seconds'], gameinfo['extratime1'], gameinfo['extratime2'])
+                        await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo['hometeam'].upper(),
+                                                                       awayteam=gameinfo['awayteam'].upper(),
+                                                                       homescore=gameinfo['homescore'],
+                                                                       awayscore=gameinfo['awayscore'],
+                                                                       game_time=game_time))
 
         try:
             target_game_def = next(value for key, value in self.defcache.items() if target_team in value)
