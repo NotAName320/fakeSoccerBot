@@ -246,7 +246,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             return await ctx.reply(
                 f'Error: One or both of your teams does not exist. Run command {self.bot.command_prefix}teamlist for a list of teams.')
 
-    @commands.command(name='abandongame', aliases=['stopgame', 'endgame'])
+    @commands.command(name='abandongame')
     @commands.has_role('bot operator')
     async def abandon_game(self, ctx):
         """Abandons a game in a channel."""
@@ -260,6 +260,31 @@ class GameManagement(commands.Cog, name='Game Management'):
         scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
         await scores_channel.send(f'GAME ABANDONED: {home_role.mention} {game["homescore"]}-{game["awayscore"]} {away_role.mention}')
         await ctx.reply('Game Abandoned. You may delete this channel at any time.')
+
+    @commands.command(name='forceendgame', aliases=['stopgame', 'endgame'])
+    @commands.has_role('bot operator')
+    async def force_end_game(self, ctx):
+        """Forces a game to end in a channel."""
+        game = await self.bot.db.fetchrow(
+            f'SELECT homeroleid, awayroleid, homescore, awayscore FROM games WHERE channelid = {ctx.channel.id}')
+        try:
+            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+        except TypeError:
+            return await ctx.send('Error: Channel does not appear to be game channel.')
+        await self.bot.write(f"UPDATE games SET gamestate = 'FINAL' WHERE channelid = {ctx.channel.id}")
+        scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
+        await scores_channel.send(
+            f'GAME ENDED EARLY: {home_role.mention} {game["homescore"]}-{game["awayscore"]} {away_role.mention}')
+        writeup = f'The game was ended early by a bot operator.\n\nAnd that\'s the end of the game!'
+        if game['homescore'] > game['awayscore']:
+            writeup += f' {home_role.mention} has defeated {away_role.mention} by a score of {game["homescore"]}-{game["awayscore"]}.'
+        elif game['awayscore'] > game['homescore']:
+            writeup += f' {away_role.mention} has defeated {home_role.mention} by a score of {game["awayscore"]}-{game["homescore"]}.'
+        else:
+            writeup += f' {home_role.mention} and {away_role.mention} drew by a score of {game["homescore"]}-{game["awayscore"]}.'
+        writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
+        await ctx.reply('Drive home safely.')
 
     @commands.command(name='rerun')
     @commands.has_role('bot operator')
