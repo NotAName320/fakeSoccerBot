@@ -295,7 +295,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
-        if game['default_chew']:
+        if not game['default_chew']:
             await self.bot.write(f'UPDATE games SET default_chew = true WHERE channelid = {ctx.channel.id}')
             return await ctx.reply(f'{home_role.mention} {away_role.mention} The game is now in chew only mode.')
         await self.bot.write(f'UPDATE games SET default_chew = false WHERE channelid = {ctx.channel.id}')
