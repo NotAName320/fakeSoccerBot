@@ -78,7 +78,7 @@ class Teams(commands.Cog):
         """Creates a new team and adds it to the database."""
         team_id = team_id.lower()
         if len(team_id) > 5:
-            return await ctx.send('Error: Team ID too long.')
+            return await ctx.reply('Error: Team ID too long.')
         query = 'INSERT INTO teams(teamid, teamname, manager, color) VALUES ($1, $2, $3, $4)'
         await self.bot.write(query, team_id, team_name, member.id, color)
         color = discord.Color(int(color, 16))
@@ -255,7 +255,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
             away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
-            return await ctx.send('Error: Channel does not appear to be game channel.')
+            return await ctx.reply('Error: Channel does not appear to be game channel.')
         await self.bot.write(f"UPDATE games SET gamestate = 'ABANDONED' WHERE channelid = {ctx.channel.id}")
         scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
         await scores_channel.send(f'GAME ABANDONED: {home_role.mention} {game["homescore"]}-{game["awayscore"]} {away_role.mention}')
@@ -271,7 +271,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
             away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
-            return await ctx.send('Error: Channel does not appear to be game channel.')
+            return await ctx.reply('Error: Channel does not appear to be game channel.')
         await self.bot.write(f"UPDATE games SET gamestate = 'FINAL' WHERE channelid = {ctx.channel.id}")
         scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
         await scores_channel.send(
@@ -286,6 +286,21 @@ class GameManagement(commands.Cog, name='Game Management'):
         writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
         await ctx.reply(writeup)
 
+    @commands.command(name='forcechew')
+    @commands.has_role('bot operator')
+    async def force_chew(self, ctx):
+        game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, default_chew FROM games WHERE channelid = {ctx.channel.id}')
+        try:
+            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+        except TypeError:
+            return await ctx.reply('Error: Channel does not appear to be game channel.')
+        if game['default_chew']:
+            await self.bot.write(f'UPDATE games SET default_chew = true WHERE channelid = {ctx.channel.id}')
+            return await ctx.reply(f'{home_role.mention} {away_role.mention} The game is now in chew only mode.')
+        await self.bot.write(f'UPDATE games SET default_chew = false WHERE channelid = {ctx.channel.id}')
+        return await ctx.reply(f'{home_role.mention} {away_role.mention} The game is no longer in chew only mode.')
+
     @commands.command(name='rerun')
     @commands.has_role('bot operator')
     async def rerun(self, ctx):
@@ -295,7 +310,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
             away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
-            return await ctx.send('Error: Channel does not appear to be game channel.')
+            return await ctx.reply('Error: Channel does not appear to be game channel.')
         if game['def_off'] == 'DEFENSE':
             waitingon = game['waitingon']
         else:

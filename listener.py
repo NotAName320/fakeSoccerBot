@@ -266,7 +266,9 @@ class Listener(commands.Cog):
                     if 'chew' in message.content.lower():
                         clock_mode = ClockUse.CHEW
 
-                    game_row = await self.bot.db.fetchrow(f'SELECT gamestate, defnumber FROM games WHERE gameid = {target_game_off[0]}')
+                    game_row = await self.bot.db.fetchrow(f'SELECT gamestate, defnumber, default_chew FROM games WHERE gameid = {target_game_off[0]}')
+                    if game_row['default_chew']:
+                        clock_mode = ClockUse.CHEW
                     field_position = game_row['gamestate']
                     defnumber = game_row['defnumber']
                     diff = calculateDiff(offnumbers, defnumber)
