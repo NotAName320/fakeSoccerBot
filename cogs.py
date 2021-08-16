@@ -31,7 +31,7 @@ import utils
 from discord_db_client import Bot
 from listener import DEFENSIVE_MESSAGE
 
-RANGES_IMAGE_URL = 'https://cdn.discordapp.com/attachments/867112465673355285/867863000840011816/unknown.png'
+RANGES_IMAGE_URL = 'https://media.discordapp.net/attachments/867112465673355285/876654939873636372/unknown.png'
 
 
 class Teams(commands.Cog):
