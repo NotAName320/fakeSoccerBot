@@ -131,7 +131,7 @@ class GameManagement(commands.Cog, name='Game Management'):
 
             gameid = await self.bot.db.fetchval(f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
             listener_cog = self.bot.get_cog('Listener')
-            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY')
+            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
             message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
@@ -178,7 +178,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             gameid = await self.bot.db.fetchval(
                 f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
             listener_cog = self.bot.get_cog('Listener')
-            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY')
+            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
             message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
@@ -226,7 +226,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             gameid = await self.bot.db.fetchval(
                 f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
             listener_cog = self.bot.get_cog('Listener')
-            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY')
+            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
             message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
