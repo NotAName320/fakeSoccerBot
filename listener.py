@@ -330,7 +330,8 @@ class Listener(commands.Cog):
                         await self.bot.write(f"UPDATE games SET gamestate = 'MIDFIELD', "
                                              f"def_off = 'DEFENSE'::def_off, "
                                              f"waitingon = 'HOME', "
-                                             f"secondhalf = true "
+                                             f"secondhalf = true,"
+                                             f"seconds = 2700 + ({extratime1}*60) "
                                              f"WHERE gameid = {target_game_off[0]}")
                         writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention} getting the ball first.'
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
