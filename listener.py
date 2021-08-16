@@ -371,13 +371,12 @@ class Listener(commands.Cog):
                         del self.offcache[target_game_off[4]]
                     except KeyError:
                         pass
-                    finally:
-                        game_time = seconds_to_time(gameinfo['seconds'], gameinfo['extratime1'], gameinfo['extratime2'])
-                        await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo['hometeam'].upper(),
-                                                                       awayteam=gameinfo['awayteam'].upper(),
-                                                                       homescore=gameinfo['homescore'],
-                                                                       awayscore=gameinfo['awayscore'],
-                                                                       game_time=game_time))
+                    game_time = seconds_to_time(gameinfo['seconds'], gameinfo['extratime1'], gameinfo['extratime2'])
+                    await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo['hometeam'].upper(),
+                                                                   awayteam=gameinfo['awayteam'].upper(),
+                                                                   homescore=gameinfo['homescore'],
+                                                                   awayscore=gameinfo['awayscore'],
+                                                                   game_time=game_time))
 
         try:
             target_game_def = next(value for key, value in self.defcache.items() if target_team in value)
@@ -426,8 +425,11 @@ class Listener(commands.Cog):
                                                                      homescore=m['homescore'],
                                                                      awayscore=m['awayscore'],
                                                                      game_time=game_time))
-                    self.offcache[target_game_def[4]] = (self.defcache[target_game_def[4]][0], self.defcache[target_game_def[4]][1], self.defcache[target_game_def[4]][2], waitingon, target_game_def[4])
-                    del self.defcache[target_game_def[4]]
+                    try:
+                        self.offcache[target_game_def[4]] = (self.defcache[target_game_def[4]][0], self.defcache[target_game_def[4]][1], self.defcache[target_game_def[4]][2], waitingon, target_game_def[4])
+                        del self.defcache[target_game_def[4]]
+                    except KeyError:
+                        pass
                     return await message.reply(f"I've got {defnumbers} as your number.")
 
 
