@@ -131,12 +131,11 @@ class GameManagement(commands.Cog, name='Game Management'):
 
             gameid = await self.bot.db.fetchval(f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
             listener_cog = self.bot.get_cog('Listener')
-            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
+            listener_cog.offcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
             message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
             await channel.send(f'Game has started between {home_role.mention} and {away_role.mention}\n\n'
-                               f'{home_role.mention} gets the ball first.\n\n'
                                f'{hometeam.upper()} 0-0 {awayteam.upper()} '
                                f'0:00\n\n'
                                f'{away_role.mention}, please call **heads** or **tails**.')
@@ -172,12 +171,11 @@ class GameManagement(commands.Cog, name='Game Management'):
             gameid = await self.bot.db.fetchval(
                 f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
             listener_cog = self.bot.get_cog('Listener')
-            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
+            listener_cog.offcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
             message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
             await channel.send(f'Game has started between {home_role.mention} and {away_role.mention}\n\n'
-                               f'{home_role.mention} gets the ball first.\n\n'
                                f'{hometeam.upper()} 0-0 {awayteam.upper()} '
                                f'0:00\n\n'
                                f'{away_role.mention}, please call **heads** or **tails**.')
@@ -214,12 +212,11 @@ class GameManagement(commands.Cog, name='Game Management'):
             gameid = await self.bot.db.fetchval(
                 f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
             listener_cog = self.bot.get_cog('Listener')
-            listener_cog.defcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
+            listener_cog.offcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
             message = await channel.send(RANGES_IMAGE_URL)
             await message.pin()
             await channel.send(f'Game has started between {home_role.mention} and {away_role.mention}\n\n'
-                               f'{home_role.mention} gets the ball first.\n\n'
                                f'{hometeam.upper()} 0-0 {awayteam.upper()} '
                                f'0:00\n\n'
                                f'{away_role.mention}, please call **heads** or **tails**.')
