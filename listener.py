@@ -299,7 +299,7 @@ class Listener(commands.Cog):
                         except KeyError:
                             pass
 
-                        gameinfo = await self.bot.db.fetchrow(f'SELECT waiting hometeam, awayteam, homeroleid, awayroleid FROM games WHERE gameid = {target_game_off[0]}')
+                        gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, hometeam, awayteam, homeroleid, awayroleid FROM games WHERE gameid = {target_game_off[0]}')
                         home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                         away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                         await message.reply(f'{home_role.mention if kickoff == "HOME" else away_role.mention} will kick off in the first half.\n\n'
