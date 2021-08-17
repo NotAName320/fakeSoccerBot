@@ -299,12 +299,22 @@ class Listener(commands.Cog):
                         except KeyError:
                             pass
 
-                        gameinfo = await self.bot.db.fetchrow(f'SELECT hometeam, awayteam, homeroleid, awayroleid FROM games WHERE gameid = {target_game_off[0]}')
+                        gameinfo = await self.bot.db.fetchrow(f'SELECT waiting hometeam, awayteam, homeroleid, awayroleid FROM games WHERE gameid = {target_game_off[0]}')
                         home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                         away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
-                        return await message.reply(f'{home_role.mention if kickoff == "HOME" else away_role.mention} will kick off in the first half.\n\n'
-                                                   f'{gameinfo["hometeam"].upper()} 0-0 {gameinfo["awayteam"].upper()} 0:00\n\n'
-                                                   f'{away_role.mention if kickoff == "HOME" else home_role.mention}, please call **heads** or **tails**.')
+                        await message.reply(f'{home_role.mention if kickoff == "HOME" else away_role.mention} will kick off in the first half.\n\n'
+                                            f'{gameinfo["hometeam"].upper()} 0-0 {gameinfo["awayteam"].upper()} 0:00\n\n'
+                                            f'Waiting on defensive number')
+                        if kickoff == 'HOME':
+                            user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
+                        else:
+                            user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
+                        user_to_dm = self.bot.get_user(user_to_dm)
+                        return await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo["hometeam"].upper(),
+                                                                              awayteam=gameinfo["awayteam"].upper(),
+                                                                              homescore='0',
+                                                                              awayscore='0',
+                                                                              game_time='0:00'))
 
                     offnumbers = [int(x) for x in message.content.split() if x.isdigit()]
 
