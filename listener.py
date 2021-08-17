@@ -63,6 +63,7 @@ class Listener(commands.Cog):
 
     @tasks.loop(minutes=1)
     async def refresh_game_team_cache(self):
+        """Natural refresh of the game and team cache. Not as necessary anymore but will sometimes catch a bugged game before it gets rerun."""
         self.offcache = {}
         self.defcache = {}
         self.teamcache = {}
@@ -81,6 +82,7 @@ class Listener(commands.Cog):
 
     @tasks.loop(hours=1)
     async def check_for_deadline(self):
+        """Checks each active game and either gives warning, awards goal, or forfeits game."""
         games = await self.bot.db.fetch("SELECT gameid, deadline FROM games WHERE gamestate != 'FINAL'::gamestate AND gamestate != 'ABANDONED'::gamestate AND gamestate != 'FORFEIT'::gamestate")
         for game in games:
             if game['deadline'] - datetime.timedelta(hours=12) < PST.localize((datetime.datetime.now())) < game['deadline'] - datetime.timedelta(hours=11):
@@ -228,6 +230,7 @@ class Listener(commands.Cog):
 
     @check_for_deadline.before_loop
     async def before_start_checking_deadline(self):
+        """Prevents deadline messages from firing before properly logged in to Discord"""
         await self.bot.wait_until_ready()
 
     @commands.Cog.listener(name='on_message')
