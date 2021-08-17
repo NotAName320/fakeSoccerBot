@@ -234,13 +234,7 @@ class GameManagement(commands.Cog, name='Game Management'):
                                f'{home_role.mention} gets the ball first.\n\n'
                                f'{hometeam.upper()} 0-0 {awayteam.upper()} '
                                f'0:00\n\n'
-                               f'Waiting on {away_role.mention} for defensive number')
-            away_manager = self.bot.get_user(away_team['manager'])
-            await away_manager.send(DEFENSIVE_MESSAGE.format(hometeam=hometeam.upper(),
-                                                             awayteam=awayteam.upper(),
-                                                             homescore='0',
-                                                             awayscore='0',
-                                                             game_time='0:00'))
+                               f'{away_role.mention}, please call **heads** or **tails**.')
             return await ctx.reply(f'Game successfully started in {channel.mention}.')
         else:
             return await ctx.reply(
