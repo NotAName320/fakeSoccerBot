@@ -372,6 +372,7 @@ class Listener(commands.Cog):
                     result = DBResult(result=outcome, clock_use=clock_mode)
                     await result.send(self.bot, gameid=target_game_off[0], home_away=target_game_off[3].lower())
                     gameinfo = await self.bot.db.fetchrow(f'SELECT first_half_kickoff, isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
+                    seconds = gameinfo['seconds']
                     home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                     away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                     if gameinfo['waitingon'] == 'HOME':
@@ -406,6 +407,7 @@ class Listener(commands.Cog):
                                              f"secondhalf = true,"
                                              f"seconds = 2700 + ({extratime1}*60) "
                                              f"WHERE gameid = {target_game_off[0]}")
+                        seconds = 2700 + (extratime1 * 60)
                         writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention if second_half_kickoff == "AWAY" else home_role.mention} getting the ball first.'
                         user_to_dm = self.bot.get_user(user_to_dm)
                         waitingon = gameinfo['first_half_kickoff']
@@ -443,7 +445,7 @@ class Listener(commands.Cog):
                         del self.offcache[target_game_off[4]]
                     except KeyError:
                         pass
-                    game_time = seconds_to_time(gameinfo['seconds'], gameinfo['extratime1'], gameinfo['extratime2'])
+                    game_time = seconds_to_time(seconds, gameinfo['extratime1'], gameinfo['extratime2'])
                     await user_to_dm.send(DEFENSIVE_MESSAGE.format(hometeam=gameinfo['hometeam'].upper(),
                                                                    awayteam=gameinfo['awayteam'].upper(),
                                                                    homescore=gameinfo['homescore'],
