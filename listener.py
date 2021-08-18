@@ -261,7 +261,7 @@ class Listener(commands.Cog):
             if message.channel.id == list(self.offcache.keys())[list(self.offcache.values()).index(target_game_off)]:
                 if (target_game_off[3] == 'HOME' and target_game_off[1] == target_team) or (target_game_off[3] == 'AWAY' and target_game_off[2] == target_team):
                     field_position = await self.bot.db.fetchval(f"SELECT gamestate FROM games WHERE gameid = {target_game_off[0]}")
-                    await message.channel.send(f'DEBUG {field_position}')
+                    await message.channel.send(f'DEBUG IGNORE THIS {field_position}')
                     if field_position == 'COIN_TOSS':
                         if not any(x in message.content.lower() for x in ['heads', 'tails']):
                             return await message.reply('Did not call heads or tails.')
