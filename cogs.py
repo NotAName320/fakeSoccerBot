@@ -280,6 +280,21 @@ class GameManagement(commands.Cog, name='Game Management'):
         await self.bot.write(f'UPDATE games SET default_chew = false WHERE channelid = {ctx.channel.id}')
         return await ctx.reply(f'{home_role.mention} {away_role.mention} The game is no longer in chew only mode.')
 
+    @commands.command(name='addscore')
+    @commands.has_role('bot operator')
+    async def add_score(self, ctx, arg: str):
+        arg = arg.lower()
+        if arg not in ['home', 'away']:
+            return await ctx.reply('Please specify home or away.')
+        game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid FROM games WHERE channelid = {ctx.channel.id}')
+        try:
+            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+        except TypeError:
+            return await ctx.reply('Error: Channel does not appear to be game channel.')
+        await self.bot.write(f"UPDATE games SET {'homescore' if arg == 'home' else 'awayscore'} = {'homescore' if arg == 'home' else 'awayscore'} + 1 WHERE channelid = {ctx.channel.id}")
+        return await ctx.reply(f'{home_role.mention if arg == "home" else away_role.mention} has been granted one goal by a bot operator.')
+
     @commands.command(name='rerun')
     @commands.has_role('bot operator')
     async def rerun(self, ctx):
