@@ -121,10 +121,10 @@ class GameManagement(commands.Cog, name='Game Management'):
             channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
-            away_team = await self.bot.db.fetchrow('SELECT teamname, manager FROM teams WHERE teamid = $1', awayteam)
+            away_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', awayteam)
 
             home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
-            away_role = discord.utils.get(ctx.guild.roles, name=away_team['teamname'])
+            away_role = discord.utils.get(ctx.guild.roles, name=away_team_name)
 
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day')"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
@@ -160,10 +160,10 @@ class GameManagement(commands.Cog, name='Game Management'):
             channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}-scrim', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
-            away_team = await self.bot.db.fetchrow('SELECT teamname, manager FROM teams WHERE teamid = $1', awayteam)
+            away_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', awayteam)
 
             home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
-            away_role = discord.utils.get(ctx.guild.roles, name=away_team['teamname'])
+            away_role = discord.utils.get(ctx.guild.roles, name=away_team_name)
 
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, isscrimmage) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', true)"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
@@ -201,10 +201,10 @@ class GameManagement(commands.Cog, name='Game Management'):
             channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
-            away_team = await self.bot.db.fetchrow('SELECT teamname, manager FROM teams WHERE teamid = $1', awayteam)
+            away_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', awayteam)
 
             home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
-            away_role = discord.utils.get(ctx.guild.roles, name=away_team['teamname'])
+            away_role = discord.utils.get(ctx.guild.roles, name=away_team_name)
 
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, overtimegame) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', true)"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
