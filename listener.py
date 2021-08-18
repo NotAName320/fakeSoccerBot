@@ -90,6 +90,13 @@ class Listener(commands.Cog):
                 channel = self.bot.get_channel(gameinfo['channelid'])
                 user_to_ping = discord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else discord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
                 return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\n Failure to submit will lead to concession of a goal and/or a forfeit.')
+
+            if game['deadline'] - datetime.timedelta(hours=16) < PST.localize((datetime.datetime.now())) < game['deadline'] - datetime.timedelta(hours=15):
+                gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
+                channel = self.bot.get_channel(gameinfo['channelid'])
+                user_to_ping = discord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else discord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
+                return await channel.send(f'{user_to_ping.mention} You have about 8 hours left on your deadline.')
+
             if game['deadline'] < PST.localize(datetime.datetime.now()):
                 gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
                 if gameinfo['gamestate'] == 'SHOOTOUT':
