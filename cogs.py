@@ -129,7 +129,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day')"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
 
-            gameid = await self.bot.db.fetchval(f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
+            gameid = await self.bot.db.fetchval(f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}' ORDER BY gameid DESC")
             listener_cog = self.bot.get_cog('Listener')
             listener_cog.offcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
@@ -169,7 +169,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
 
             gameid = await self.bot.db.fetchval(
-                f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
+                f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}' ORDER BY gameid DESC")
             listener_cog = self.bot.get_cog('Listener')
             listener_cog.offcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
@@ -210,7 +210,7 @@ class GameManagement(commands.Cog, name='Game Management'):
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
 
             gameid = await self.bot.db.fetchval(
-                f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}'")
+                f"SELECT gameid FROM games WHERE hometeam = '{hometeam}' AND awayteam = '{awayteam}' ORDER BY gameid DESC")
             listener_cog = self.bot.get_cog('Listener')
             listener_cog.offcache[channel.id] = (gameid, hometeam, awayteam, 'AWAY', channel.id)
 
