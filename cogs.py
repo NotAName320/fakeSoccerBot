@@ -268,6 +268,7 @@ class GameManagement(commands.Cog, name='Game Management'):
     @commands.command(name='forcechew')
     @commands.has_role('bot operator')
     async def force_chew(self, ctx):
+        """Toggles on or off force chew mode in a game channel."""
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, default_chew FROM games WHERE channelid = {ctx.channel.id}')
         try:
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
@@ -280,9 +281,10 @@ class GameManagement(commands.Cog, name='Game Management'):
         await self.bot.write(f'UPDATE games SET default_chew = false WHERE channelid = {ctx.channel.id}')
         return await ctx.reply(f'{home_role.mention} {away_role.mention} The game is no longer in chew only mode.')
 
-    @commands.command(name='addscore')
+    @commands.command(name='addscore', aliases=['addgoal'])
     @commands.has_role('bot operator')
     async def add_score(self, ctx, arg: str):
+        """Allows bot operator to manually add a point to the game in the game channel."""
         arg = arg.lower()
         if arg not in ['home', 'away']:
             return await ctx.reply('Please specify home or away.')
