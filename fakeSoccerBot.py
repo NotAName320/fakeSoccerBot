@@ -89,7 +89,7 @@ async def login():
             print(f'Exception in command {ctx.command}:', file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             embedcolor = discord.Color(0x000000)
-            errordesc = f'```python\n' \
+            errordesc = f'```py\n' \
                         f'{"".join(traceback.format_exception(type(error), error, tb=error.__traceback__))}\n' \
                         f'```'
             embed = discord.Embed(title='Error', description=errordesc, color=embedcolor)

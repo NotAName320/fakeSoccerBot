@@ -336,9 +336,9 @@ class Eval(commands.Cog):
         """Evaluate string"""
         result = eval(arg)
         if inspect.isawaitable(result):
-            embed = discord.Embed(title='Eval', description=f'```\n{await result}\n```', color=discord.Color(0x000000))
+            embed = discord.Embed(title='Eval', description=f'```py\n{await result}\n```', color=discord.Color(0x000000))
         else:
-            embed = discord.Embed(title='Eval', description=f'```\n{result}\n```', color=discord.Color(0x000000))
+            embed = discord.Embed(title='Eval', description=f'```py\n{result}\n```', color=discord.Color(0x000000))
         await ctx.reply(embed=embed)
 
 
