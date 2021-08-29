@@ -102,7 +102,7 @@ class Teams(commands.Cog):
     @commands.has_role('bot operator')
     async def add_substitute(self, ctx, team_id: str, user: discord.Member):
         team_id = team_id.lower()
-        team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute WHERE teamid = $1', team_id)
+        team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute FROM teams WHERE teamid = $1', team_id)
         if team is not None:
             await self.bot.write(f"UPDATE teams SET substitute = {user.id} WHERE teamid = {team_id}")
             team_role = discord.utils.get(ctx.guild.roles, name=team['teamname'])
@@ -120,7 +120,7 @@ class Teams(commands.Cog):
     @commands.has_role('bot operator')
     async def remove_substitute(self, ctx, team_id: str):
         team_id = team_id.lower()
-        team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute WHERE teamid = $1', team_id)
+        team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute FROM teams WHERE teamid = $1', team_id)
         if team is not None:
             await self.bot.write(f"UPDATE teams SET substitute = NULL WHERE teamid = {team_id}")
             team_role = discord.utils.get(ctx.guild.roles, name=team['teamname'])
