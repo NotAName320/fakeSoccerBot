@@ -43,8 +43,7 @@ class Teams(commands.Cog):
     async def team_info(self, ctx, team_id: str):
         """Gives info about a certain team."""
         team_id = team_id.lower()
-        query = 'SELECT * FROM teams WHERE teamid = $1'
-        team = await self.bot.db.fetchrow(query, team_id)
+        team = await self.bot.db.fetchrow('SELECT * FROM teams WHERE teamid = $1', team_id)
         try:
             c = discord.Color(int(team['color'], 16))
         except TypeError:
@@ -54,6 +53,7 @@ class Teams(commands.Cog):
         embed.add_field(name='Name', value=team['teamname'])
         embed.add_field(name='Team ID', value=team['teamid'])
         embed.add_field(name='Manager', value=manager.mention)
+        embed.add_field(name='Substitute', value='*None*' if team['substitute'] is None else self.bot.get_user(team['substitute']).mention)
         await ctx.reply(embed=embed)
 
     @commands.command(name='teamlist', aliases=['listteams', 'teamids', 'listteamids'])
@@ -72,7 +72,7 @@ class Teams(commands.Cog):
         embed.set_footer(text=f'Page {page_number}')
         await ctx.reply(embed=embed)
 
-    @commands.command(name='createteam')
+    @commands.command(name='createteam', aliases=['addteam'])
     @commands.has_role('bot operator')
     async def create_team(self, ctx, member: discord.Member, color: str, team_id: str, *, team_name: str):
         """Creates a new team and adds it to the database."""
@@ -87,7 +87,7 @@ class Teams(commands.Cog):
         await member.add_roles(new_role)
         await ctx.reply(f'Success: New team {team_name} with manager {member} has been created.')
 
-    @commands.command(name='removeteam', aliases=['deleteteam'])
+    @commands.command(name='removeteam', aliases=['deleteteam', 'delteam'])
     @commands.has_role('bot operator')
     async def remove_team(self, ctx, teamid: str):
         """Deletes a team from the database."""
@@ -97,6 +97,41 @@ class Teams(commands.Cog):
         role = (discord.utils.get(ctx.guild.roles, name=userteam))
         await role.delete()
         await ctx.reply(f'Success: Team {userteam} has been deleted.')
+
+    @commands.command(name='addsubstitute', aliases=['addsub'])
+    @commands.has_role('bot operator')
+    async def add_substitute(self, ctx, team_id: str, user: discord.Member):
+        team_id = team_id.lower()
+        team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute WHERE teamid = $1', team_id)
+        if team is not None:
+            await self.bot.write(f"UPDATE teams SET substitute = {user.id} WHERE teamid = {team_id}")
+            team_role = discord.utils.get(ctx.guild.roles, name=team['teamname'])
+            existing_coach = discord.utils.get(ctx.guild.members, id=team['manager'])
+            await existing_coach.remove_roles(team_role)
+            if team['substitute'] is not None:
+                existing_sub = discord.utils.get(ctx.guild.members, id=team['substitute'])
+                await existing_sub.remove_roles(team_role)
+            await user.add_roles(team_role)
+            await ctx.reply(f"{user.mention} you are now substitute manager of {team_role.mention}.")
+        else:
+            return await ctx.reply("Error: Team not found.")
+
+    @commands.command(name='removesubstitute', aliases=['removesub', 'delsubstitute', 'delsub'])
+    @commands.has_role('bot operator')
+    async def remove_substitute(self, ctx, team_id: str):
+        team_id = team_id.lower()
+        team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute WHERE teamid = $1', team_id)
+        if team is not None:
+            await self.bot.write(f"UPDATE teams SET substitute = NULL WHERE teamid = {team_id}")
+            team_role = discord.utils.get(ctx.guild.roles, name=team['teamname'])
+            existing_coach = discord.utils.get(ctx.guild.members, id=team['manager'])
+            await existing_coach.add_roles(team_role)
+            if team['substitute'] is not None:
+                existing_sub = discord.utils.get(ctx.guild.members, id=team['substitute'])
+                await existing_sub.remove_roles(team_role)
+            await ctx.reply(f"Substitute for team {team_role.mention} has been removed.")
+        else:
+            return await ctx.reply("Error: Team not found.")
 
 
 class GameManagement(commands.Cog, name='Game Management'):
