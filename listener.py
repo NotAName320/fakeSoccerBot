@@ -76,7 +76,7 @@ class Listener(commands.Cog):
                 self.offcache[game['channelid']] = (game['gameid'], game['hometeam'], game['awayteam'], game['waitingon'], game['channelid'])
             else:
                 self.defcache[game['channelid']] = (game['gameid'], game['hometeam'], game['awayteam'], game['waitingon'], game['channelid'])
-        teams = await self.bot.db.fetch('SELECT teamname, teamid, manager FROM teams')
+        teams = await self.bot.db.fetch('SELECT teamname, teamid, substitute, manager FROM teams')
         for team in teams:
             manager_or_sub = team['manager']
             if team['substitute'] is not None:
