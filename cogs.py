@@ -101,6 +101,7 @@ class Teams(commands.Cog):
     @commands.command(name='addsubstitute', aliases=['addsub'])
     @commands.has_role('bot operator')
     async def add_substitute(self, ctx, team_id: str, user: discord.Member):
+        """Adds a substitute for a team."""
         team_id = team_id.lower()
         team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute FROM teams WHERE teamid = $1', team_id)
         if team is not None:
@@ -119,6 +120,7 @@ class Teams(commands.Cog):
     @commands.command(name='removesubstitute', aliases=['removesub', 'delsubstitute', 'delsub'])
     @commands.has_role('bot operator')
     async def remove_substitute(self, ctx, team_id: str):
+        """Removes a substitute (if there is any) and their team role, and reinstates the official manager."""
         team_id = team_id.lower()
         team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute FROM teams WHERE teamid = $1', team_id)
         if team is not None:
