@@ -113,7 +113,7 @@ class Teams(commands.Cog):
                 existing_sub = discord.utils.get(ctx.guild.members, id=team['substitute'])
                 await existing_sub.remove_roles(team_role)
             await user.add_roles(team_role)
-            await ctx.reply(f"{user.mention} you are now substitute manager of {team_role.mention}.")
+            await ctx.reply(f"{user.mention} you are now substitute manager of {team_role.mention}. Please give the bot at most a minute to refresh their cache.")
         else:
             return await ctx.reply("Error: Team not found.")
 
