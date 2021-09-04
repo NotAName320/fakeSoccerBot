@@ -252,8 +252,7 @@ class Listener(commands.Cog):
         # Do not process messages that are not sent by a manager of the team, and assign that team to a variable
         # TODO: Use walrus operators here and below
         try:
-            target_team = next(key for key, value in self.teamcache.items() if message.author.id in value[1])
-            target_teams = [key for key, value in self.teamcache.items() if message.author.id in value[1]]
+            target_team = next(key for key, value in self.teamcache.items() if message.author.id == value[1])
         except StopIteration:
             return
 
