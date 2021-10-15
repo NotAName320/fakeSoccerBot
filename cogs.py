@@ -77,7 +77,7 @@ class Teams(commands.Cog):
     async def create_team(self, ctx, member: discord.Member, color: str, team_id: str, *, team_name: str):
         """Creates a new team and adds it to the database."""
         team_id = team_id.lower()
-        if len(team_id) > 5:
+        if len(team_id) > 7:
             return await ctx.send('Error: Team ID too long.')
         query = 'INSERT INTO teams(teamid, teamname, manager, color) VALUES ($1, $2, $3, $4)'
         await self.bot.write(query, team_id, team_name, member.id, color)
