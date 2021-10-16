@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 from typing import Optional
+from random import randint
 
 
 def seconds_to_time(seconds: int, extra1: Optional[int] = None, extra2: Optional[int] = None) -> str:
@@ -42,9 +43,25 @@ def seconds_to_time(seconds: int, extra1: Optional[int] = None, extra2: Optional
     return f'{m:d}:{s:02d}'
 
 
-def calculateDiff(num1: int, num2: int) -> int:
+def calculate_diff(num1: int, num2: int) -> int:
     """Calculates a diff number from 0 to 500 based on two numbers from 1 to 1000 with wraparounds."""
     diff = abs(num1 - num2)
     if diff > 500:
         return 1000 - diff
     return diff
+
+
+def extra_time_bell_curve():
+    """Random extra time based on bell curve distribution"""
+    d1000 = randint(1, 1000)
+    if d1000 <= 23:
+        return 1
+    if d1000 <= 46:
+        return 6
+    if d1000 <= 182:
+        return 2
+    if d1000 <= 318:
+        return 5
+    if d1000 <= 659:
+        return 3
+    return 4

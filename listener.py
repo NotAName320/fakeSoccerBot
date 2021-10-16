@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 import datetime
-import random
+from random import choice
 
 import discord
 from discord.ext import commands, tasks
@@ -31,7 +31,7 @@ import pytz  # TODO: Eliminate need for this module? discord.py 2.0 (when it is 
 
 from discord_db_client import Bot
 from ranges import ATTACK, MIDFIELD, DEFENSE, FREE_KICK, PENALTY
-from utils import seconds_to_time, calculateDiff
+from utils import seconds_to_time, calculate_diff, extra_time_bell_curve
 from write_result import ClockUse, DBResult
 
 
@@ -268,7 +268,7 @@ class Listener(commands.Cog):
                         if not any(x in message.content.lower() for x in ['heads', 'tails']):
                             return await message.reply('Did not call heads or tails.')
 
-                        winner = random.choice(('HOME', 'AWAY'))
+                        winner = choice(('HOME', 'AWAY'))
                         await self.bot.write(f"UPDATE games SET gamestate = 'COIN_TOSS_CHOICE', "
                                              f"waitingon = '{winner}',"
                                              f"deadline = 'now'::timestamp + INTERVAL '1 day' "
@@ -351,7 +351,7 @@ class Listener(commands.Cog):
                     if game_row['default_chew']:
                         clock_mode = ClockUse.CHEW
                     defnumber = game_row['defnumber']
-                    diff = calculateDiff(offnumbers, defnumber)
+                    diff = calculate_diff(offnumbers, defnumber)
                     ranges = None
 
                     if field_position == 'SHOOTOUT':
@@ -404,7 +404,7 @@ class Listener(commands.Cog):
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
                     waitingon = gameinfo['waitingon']
                     if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
-                        minutes_to_add = random.randint(1, 6)
+                        minutes_to_add = extra_time_bell_curve()
                         await self.bot.write(f'UPDATE games SET extratime1 = {minutes_to_add} WHERE gameid = {target_game_off[0]}')
                         writeup += f'\n\nStoppage time for the first half has started. There will be {minutes_to_add} extra minutes.'
                     elif gameinfo['seconds'] >= (2700+(extratime1*60)) and not gameinfo['secondhalf']:
@@ -426,7 +426,7 @@ class Listener(commands.Cog):
                         waitingon = gameinfo['first_half_kickoff']
                     extratime2 = 0 if gameinfo['extratime2'] is None else gameinfo['extratime2']
                     if gameinfo['seconds'] >= (5400+(extratime1*60)) and gameinfo['extratime2'] is None:
-                        minutes_to_add = random.randint(1, 6)
+                        minutes_to_add = extra_time_bell_curve()
                         await self.bot.write(f'UPDATE games SET extratime2 = {minutes_to_add} WHERE gameid = {target_game_off[0]}')
                         writeup += f'\n\nStoppage time for the second half has started. There will be {minutes_to_add} extra minutes.'
                     elif gameinfo['seconds'] >= (5400+(extratime1*60)+(extratime2*60)):
