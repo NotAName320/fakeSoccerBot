@@ -95,7 +95,7 @@ class Teams(commands.Cog):
         userteam = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', teamid)
         await self.bot.write('DELETE FROM teams WHERE teamid = $1', teamid)
         role = (discord.utils.get(ctx.guild.roles, name=userteam))
-        await role.delete()
+        # await role.delete()
         await ctx.reply(f'Success: Team {userteam} has been deleted.')
 
     @commands.command(name='addsubstitute', aliases=['addsub'])
