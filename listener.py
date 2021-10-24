@@ -94,12 +94,6 @@ class Listener(commands.Cog):
                 user_to_ping = discord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else discord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
                 return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\n Failure to submit will lead to concession of a goal and/or a forfeit.')
 
-            if game['deadline'] - datetime.timedelta(hours=8) < PST.localize((datetime.datetime.now())) < game['deadline'] - datetime.timedelta(hours=7):
-                gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
-                channel = self.bot.get_channel(gameinfo['channelid'])
-                user_to_ping = discord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else discord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
-                return await channel.send(f'{user_to_ping.mention} You have about 8 hours left on your deadline.')
-
             if game['deadline'] < PST.localize(datetime.datetime.now()):
                 gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
                 if gameinfo['gamestate'] == 'SHOOTOUT':
@@ -396,10 +390,9 @@ class Listener(commands.Cog):
                         user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
                     user_to_dm = self.bot.get_user(user_to_dm)
 
-                    writeup_text = await self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{field_position}' AND result = '{outcome.name}' ORDER BY random() LIMIT 1")
+                    writeup_text = await self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{field_position}' AND result = '{outcome.name}' AND disabled = FALSE ORDER BY random() LIMIT 1")
                     if writeup_text is None:
                         writeup_text = "If you're seeing this, the writeup is glitched. Oh well."
-                    # TODO: Fix games ending slightly early due to not accounting for extra time overflow
                     writeup = f'{writeup_text.format(offteam=home_role.mention if target_game_off[3] == "HOME" else away_role.mention, defteam=home_role.mention if target_game_off[3] == "AWAY" else away_role.mention)}\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                     extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
                     waitingon = gameinfo['waitingon']

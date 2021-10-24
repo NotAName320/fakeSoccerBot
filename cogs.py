@@ -24,6 +24,7 @@ SOFTWARE.
 
 import inspect
 
+import asyncpg.exceptions
 import discord
 from discord.ext import commands
 
@@ -67,8 +68,7 @@ class Teams(commands.Cog):
         for team in teams:
             desc_string += f'{team["teamid"].upper()}: {team["teamname"]}\n'
         desc_string += '```'
-        c = discord.Color(0x000000)
-        embed = discord.Embed(title='Team IDs', description=desc_string, color=c)
+        embed = discord.Embed(title='Team IDs', description=desc_string, color=discord.Color(0x000000))
         embed.set_footer(text=f'Page {page_number}')
         await ctx.reply(embed=embed)
 
@@ -95,7 +95,7 @@ class Teams(commands.Cog):
         userteam = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', teamid)
         await self.bot.write('DELETE FROM teams WHERE teamid = $1', teamid)
         role = (discord.utils.get(ctx.guild.roles, name=userteam))
-        # await role.delete()
+        await role.delete()
         await ctx.reply(f'Success: Team {userteam} has been deleted.')
 
     @commands.command(name='addsubstitute', aliases=['addsub'])
@@ -281,8 +281,7 @@ class GameManagement(commands.Cog, name='Game Management'):
     @commands.has_role('bot operator')
     async def force_end_game(self, ctx):
         """Forces a game to end in a channel."""
-        game = await self.bot.db.fetchrow(
-            f'SELECT homeroleid, awayroleid, homescore, awayscore FROM games WHERE channelid = {ctx.channel.id}')
+        game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, homescore, awayscore FROM games WHERE channelid = {ctx.channel.id}')
         try:
             home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
             away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
@@ -331,8 +330,24 @@ class GameManagement(commands.Cog, name='Game Management'):
             away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
-        await self.bot.write(f"UPDATE games SET {'homescore' if arg == 'home' else 'awayscore'} = {'homescore' if arg == 'home' else 'awayscore'} + 1 WHERE channelid = {ctx.channel.id}")
+        await self.bot.write(f"UPDATE games SET {arg}score = {arg}score + 1 WHERE channelid = {ctx.channel.id}")
         return await ctx.reply(f'{home_role.mention if arg == "home" else away_role.mention} has been granted one goal by a bot operator.')
+
+    @commands.command(name='subtractscore', aliases=['subtractgoal'])
+    @commands.has_role('bot operator')
+    async def subtract_score(self, ctx, arg: str):
+        """Allows bot operator to manually subtract a point to the game in the game channel."""
+        arg = arg.lower()
+        if arg not in ['home', 'away']:
+            return await ctx.reply('Please specify home or away.')
+        game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid FROM games WHERE channelid = {ctx.channel.id}')
+        try:
+            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+        except TypeError:
+            return await ctx.reply('Error: Channel does not appear to be game channel.')
+        await self.bot.write(f"UPDATE games SET {arg}score = {arg}score - 1 WHERE channelid = {ctx.channel.id}")
+        return await ctx.reply(f'{home_role.mention if arg == "home" else away_role.mention} has been removed of one goal by a bot operator.')
 
     @commands.command(name='rerun')
     @commands.has_role('bot operator')
@@ -359,7 +374,64 @@ class GameManagement(commands.Cog, name='Game Management'):
                                                                                  homescore=game['homescore'],
                                                                                  awayscore=game['awayscore'],
                                                                                  game_time=utils.seconds_to_time(game['seconds'])))
-        await ctx.reply(f'{home_role.mention} {away_role.mention} Current play is being rerun. Awaiting defensive number.')
+        return await ctx.reply(f'{home_role.mention} {away_role.mention} Current play is being rerun. Awaiting defensive number.')
+
+
+class Writeups(commands.Cog):
+    """Allows bot operators to add and disable writeups, and allows normal members to view writeups. Doesn't allow deletions 'cause that fucks up with postgres, contact the bot owner if you want a writeup removed for whatever reason."""
+    def __init__(self, bot: Bot):
+        self.bot = bot
+
+    @commands.command(name='addwriteup')
+    async def add_writeup(self, ctx, state, result, *, writeup_text):
+        """Adds a writeup to the database."""
+        try:
+            await self.bot.write("INSERT INTO writeups(gamestate, result, writeuptext) VALUES ($1::gamestate, $2::results, $3::text)", state, result, writeup_text)
+        except asyncpg.exceptions.InvalidTextRepresentationError:
+            return await ctx.reply("Error: either your gamestate, result, or both are not valid.")
+        writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups ORDER BY writeupid DESC LIMIT 1")
+        embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
+        embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
+        embed.add_field(name="Result", value=writeup_record['result'])
+        embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
+        embed.set_footer(text=f"ID: {writeup_record['writeupid']}")
+        return await ctx.reply(content=f"Success: writeup saved with the id `{writeup_record['writeupid']}`.", embed=embed)
+
+    @commands.command(aliases=['writeup'])
+    async def writeup_info(self, ctx, writeup_id: int):
+        """Gives information about a writeup."""
+        writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups WHERE writeupid = $1", writeup_id)
+        embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
+        embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
+        embed.add_field(name="Result", value=writeup_record['result'])
+        embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
+        embed.set_footer(text=f"ID: {writeup_id}")
+        return await ctx.reply(embed=embed)
+
+    @commands.command(name='togglewriteup', aliases=['enablewriteup', 'disablewriteup'])
+    async def toggle_writeup(self, ctx, writeup_id: int):
+        """Toggles the writeup. Writeups with disabled = true will not appear in games."""
+        await self.bot.write("UPDATE writeups SET disabled = NOT disabled WHERE writeupid = $1", writeup_id)
+        writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups WHERE writeupid = $1", writeup_id)
+        if writeup_record is None:
+            return await ctx.reply("Error: writeup not found.")
+        embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
+        embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
+        embed.add_field(name="Result", value=writeup_record['result'])
+        embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
+        embed.set_footer(text=f"ID: {writeup_id}")
+        return await ctx.reply(content=f"Success: writeup {'disabled' if writeup_record['disabled'] else 'enabled'}.", embed=embed)
+
+    @commands.command(name='searchwriteups')
+    async def search_writeups(self, ctx, *, search_string: str):
+        matches = await self.bot.db.fetch("SELECT writeupid, gamestate, result FROM writeups WHERE to_tsvector(writeuptext) @@ to_tsquery($1)", search_string.replace(' ', ' & '))
+        if not matches:
+            return await ctx.reply("No writeups contain the requested string.")
+        matches.sort(key=lambda x: x['writeupid'])
+        content = f'**WRITEUPS THAT CONTAIN "{search_string}":**\n'
+        for match in matches:
+            content += f"{match['writeupid']}: {match['gamestate']}, {match['result']}\n"
+        await ctx.reply(content)
 
 
 class Eval(commands.Cog):
@@ -382,4 +454,5 @@ class Eval(commands.Cog):
 def setup(bot: Bot):
     bot.add_cog(Teams(bot))
     bot.add_cog(GameManagement(bot))
+    bot.add_cog(Writeups(bot))
     bot.add_cog(Eval(bot))
