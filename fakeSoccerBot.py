@@ -49,15 +49,13 @@ async def login():
         credentials = json.load(credentials_file)
     token = credentials['discord_token']
 
-    # Creates connection to database
-    db = await asyncpg.create_pool(**credentials['postgresql_creds'])
-
-    # Enable members intent
+    # Initializes some configuration objects
+    activity = discord.Activity(type=discord.ActivityType.watching, name='your soccer games!')
     intents = discord.Intents.default()
     intents.members = True
+    db = await asyncpg.create_pool(**credentials['postgresql_creds'])
 
-    # Sets bot variable to be accessed later.
-    activity = discord.Activity(type=discord.ActivityType.watching, name='your soccer games!')
+    # Initializes bot object
     client = Bot(command_prefix='!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
 
     @client.event
@@ -66,6 +64,21 @@ async def login():
         print('Logged in as')
         print(client.user)
         print(client.user.id)
+
+    @client.event
+    async def on_error(event, *args):
+        """Prints out on_message listener errors to a logging channel."""
+        print(f'Ignoring exception in {event}:', file=sys.stderr)
+        exception = traceback.format_exc()
+        print(exception, file=sys.stderr)
+        if event == 'on_message':
+            message: discord.Message = args[0]
+            log_channel = discord.utils.get(message.guild.channels, name='logs')
+            errordesc = f'```py\n' \
+                        f'{exception}\n' \
+                        f'```'
+            embed = discord.Embed(title='Error', description=errordesc, color=discord.Color(0x000000))
+            await log_channel.send(content=f"Game error in channel {message.channel.mention}", embed=embed)
 
     @client.event
     async def on_command_error(ctx, error):
@@ -88,11 +101,10 @@ async def login():
             logger.error(traceback.format_exception(type(error), error, tb=error.__traceback__))
             print(f'Exception in command {ctx.command}:', file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            embedcolor = discord.Color(0x000000)
             errordesc = f'```py\n' \
                         f'{"".join(traceback.format_exception(type(error), error, tb=error.__traceback__))}\n' \
                         f'```'
-            embed = discord.Embed(title='Error', description=errordesc, color=embedcolor)
+            embed = discord.Embed(title='Error', description=errordesc, color=discord.Color(0x000000))
             embed.set_footer(text='Please contact NotAName#0591 for help.')
             await ctx.send(embed=embed)
 
