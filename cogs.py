@@ -377,6 +377,16 @@ class GameManagement(commands.Cog, name='Game Management'):
         return await ctx.reply(f'{home_role.mention} {away_role.mention} Current play is being rerun. Awaiting defensive number.')
 
 
+def generate_writeup_embed(writeup_record: asyncpg.Record):
+    """Helper method for Writeups cog that generates a writeup embed based on the asyncpg.Record object returned."""
+    embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
+    embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
+    embed.add_field(name="Result", value=writeup_record['result'])
+    embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
+    embed.set_footer(text=f"ID: {writeup_record['writeupid']}")
+    return embed
+
+
 class Writeups(commands.Cog):
     """Allows bot operators to add and disable writeups, and allows normal members to view writeups. Doesn't allow deletions 'cause that fucks up with postgres, contact the bot owner if you want a writeup removed for whatever reason."""
     def __init__(self, bot: Bot):
@@ -390,23 +400,13 @@ class Writeups(commands.Cog):
         except asyncpg.exceptions.InvalidTextRepresentationError:
             return await ctx.reply("Error: either your gamestate, result, or both are not valid.")
         writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups ORDER BY writeupid DESC LIMIT 1")
-        embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
-        embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
-        embed.add_field(name="Result", value=writeup_record['result'])
-        embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
-        embed.set_footer(text=f"ID: {writeup_record['writeupid']}")
-        return await ctx.reply(content=f"Success: writeup saved with the id `{writeup_record['writeupid']}`.", embed=embed)
+        return await ctx.reply(content=f"Success: writeup saved with the id `{writeup_record['writeupid']}`.", embed=generate_writeup_embed(writeup_record))
 
     @commands.command(aliases=['writeup'])
     async def writeup_info(self, ctx, writeup_id: int):
         """Gives information about a writeup."""
         writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups WHERE writeupid = $1", writeup_id)
-        embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
-        embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
-        embed.add_field(name="Result", value=writeup_record['result'])
-        embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
-        embed.set_footer(text=f"ID: {writeup_id}")
-        return await ctx.reply(embed=embed)
+        return await ctx.reply(embed=generate_writeup_embed(writeup_record))
 
     @commands.command(name='togglewriteup', aliases=['enablewriteup', 'disablewriteup'])
     async def toggle_writeup(self, ctx, writeup_id: int):
@@ -415,12 +415,7 @@ class Writeups(commands.Cog):
         writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups WHERE writeupid = $1", writeup_id)
         if writeup_record is None:
             return await ctx.reply("Error: writeup not found.")
-        embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
-        embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
-        embed.add_field(name="Result", value=writeup_record['result'])
-        embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
-        embed.set_footer(text=f"ID: {writeup_id}")
-        return await ctx.reply(content=f"Success: writeup {'disabled' if writeup_record['disabled'] else 'enabled'}.", embed=embed)
+        return await ctx.reply(content=f"Success: writeup {'disabled' if writeup_record['disabled'] else 'enabled'}.", embed=generate_writeup_embed(writeup_record))
 
     @commands.command(name='searchwriteups')
     async def search_writeups(self, ctx, *, search_string: str):
@@ -432,6 +427,15 @@ class Writeups(commands.Cog):
         for match in matches:
             content += f"{match['writeupid']}: {match['gamestate']}, {match['result']}\n"
         await ctx.reply(content)
+
+    @commands.command(name='editwriteup')
+    async def edit_writeup(self, ctx, writeup_id: int, *, new_text: str):
+        """Edits the text of the writeup."""
+        await self.bot.write("UPDATE writeups SET writeuptext = $1::text WHERE writeupid = $2", new_text, writeup_id)
+        writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups WHERE writeupid = $1", writeup_id)
+        if writeup_record is None:
+            return await ctx.reply("Error: writeup not found.")
+        return await ctx.reply(content=f"Success: writeup saved with the id `{writeup_record['writeupid']}`.", embed=generate_writeup_embed(writeup_record))
 
 
 class Eval(commands.Cog):

@@ -108,6 +108,15 @@ async def login():
             embed.set_footer(text='Please contact NotAName#0591 for help.')
             await ctx.send(embed=embed)
 
+    @client.command()
+    @commands.is_owner()
+    async def reload(ctx):
+        status_message = await ctx.reply("Reloading bot...\n`cogs.py:` ❌\n`listener.py`: ❌")
+        client.reload_extension('cogs')
+        await status_message.edit(content="Reloading bot...\n`cogs.py:` ✅\n`listener.py`: ❌")
+        client.reload_extension('listener')
+        await status_message.edit(content="Bot reloaded!\n`cogs.py:` ✅\n`listener.py`: ✅")
+
     # Adds cogs and runs bot
     client.load_extension('cogs')
     client.load_extension('listener')
