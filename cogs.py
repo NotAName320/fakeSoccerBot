@@ -393,8 +393,9 @@ class Writeups(commands.Cog):
         self.bot = bot
 
     @commands.command(name='addwriteup')
-    async def add_writeup(self, ctx, state, result, *, writeup_text):
+    async def add_writeup(self, ctx, state: str, result: str, *, writeup_text: str):
         """Adds a writeup to the database."""
+        state, result = state.upper(), result.upper()
         try:
             await self.bot.write("INSERT INTO writeups(gamestate, result, writeuptext) VALUES ($1::gamestate, $2::results, $3::text)", state, result, writeup_text)
         except asyncpg.exceptions.InvalidTextRepresentationError:
