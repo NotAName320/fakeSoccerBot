@@ -145,7 +145,7 @@ class Listener(commands.Cog):
                         await game_channel.send(f'{home_role.mention} has reached the limit of 3 delays of game.\n\n'
                                                 f'The game is over! {away_role.mention} has won!\n\n'
                                                 f'The score is 3-0.')
-                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
+                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
                         score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
                         return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     else:
@@ -192,7 +192,7 @@ class Listener(commands.Cog):
                             f'{away_role.mention} has reached the limit of 3 delays of game.\n\n'
                             f'The game is over! {home_role.mention} has won!\n\n'
                             f'The score is 3-0.')
-                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
+                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
                         score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
                         return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     else:
