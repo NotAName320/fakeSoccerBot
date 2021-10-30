@@ -135,8 +135,8 @@ class Listener(commands.Cog):
                     if gameinfo['homedelays'] == 2:
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0, "
+                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END, "
+                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END, "
                                              f"homedelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
@@ -181,8 +181,8 @@ class Listener(commands.Cog):
                     if gameinfo['awaydelays'] == 2:
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3, "
+                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END, "
+                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END, "
                                              f"awaydelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
