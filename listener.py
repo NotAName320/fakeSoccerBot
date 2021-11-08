@@ -25,9 +25,8 @@ SOFTWARE.
 import datetime
 from random import choice
 
-import discord
-from discord.ext import commands, tasks
-import pytz  # TODO: Eliminate need for this module? discord.py 2.0 (when it is officially released) will solve this anyways
+import nextcord
+from nextcord.ext import commands, tasks
 
 from discord_db_client import Bot
 from ranges import ATTACK, MIDFIELD, DEFENSE, FREE_KICK, PENALTY
@@ -38,7 +37,6 @@ from write_result import ClockUse, DBResult
 OFFENSIVE_MESSAGE = '{mention} Please submit an offensive number between `1` and `1000`. Add the phrase **chew** to use more time, and **hurry** to use less.\n\n{state}\n\n{hometeam} {homescore}-{awayscore} {awayteam} {game_time}.'
 DEFENSIVE_MESSAGE = 'Please submit a defensive number between `1` and `1000`.\n\n{hometeam} {homescore}-{awayscore} {awayteam} {game_time}.'
 guild_id = 843971716883021865
-PST = pytz.timezone('America/Los_Angeles')
 
 # TODO: Optimize some SELECT functions throughout by removing hometeamid and awayteamid (they are already provided by cache)
 
@@ -58,7 +56,7 @@ class Listener(commands.Cog):
         return teamid
 
     async def user_id_from_team(self, teamid: str) -> int:
-        userid = await self.bot.db.fetchval("SELECT manager FROM teams WHERE teamid = $1", teamid)
+        userid = await self.bot.db.fetchval("SELECT CASE WHEN substitute = null THEN manager ELSE substitute END FROM substitute WHERE teamid = $1", teamid)
         return userid
 
     @tasks.loop(minutes=1)
@@ -88,46 +86,46 @@ class Listener(commands.Cog):
         """Checks each active game and either gives warning, awards goal, or forfeits game."""
         games = await self.bot.db.fetch("SELECT gameid, deadline FROM games WHERE gamestate != 'FINAL'::gamestate AND gamestate != 'ABANDONED'::gamestate AND gamestate != 'FORFEIT'::gamestate")
         for game in games:
-            if game['deadline'] - datetime.timedelta(hours=12) < PST.localize((datetime.datetime.now())) < game['deadline'] - datetime.timedelta(hours=11):
+            if game['deadline'] - datetime.timedelta(hours=12) < nextcord.utils.utcnow() < game['deadline'] - datetime.timedelta(hours=11):
                 gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
                 channel = self.bot.get_channel(gameinfo['channelid'])
-                user_to_ping = discord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else discord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
-                return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\n Failure to submit will lead to concession of a goal and/or a forfeit.')
+                user_to_ping = nextcord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else nextcord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
+                return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\nFailure to submit will lead to concession of a goal and/or a forfeit.')
 
-            if game['deadline'] < PST.localize(datetime.datetime.now()):
+            if game['deadline'] < nextcord.utils.utcnow():
                 gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
                 if gameinfo['gamestate'] == 'SHOOTOUT':
                     if gameinfo['waitingon'] == 'HOME':
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0, "
+                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END, "
+                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END, "
                                              f"homedelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         await game_channel.send(f'{home_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
                                                 f'The game is over! {away_role.mention} has won!\n\n'
                                                 f'The score is 0-3.')
                         scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
-                        score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
+                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
                         return await score_channel.send(f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     else:
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3, "
+                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END, "
+                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END, "
                                              f"awaydelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         await game_channel.send(
                             f'{away_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
                             f'The game is over! {home_role.mention} has won!\n\n'
                             f'The score is 0-3.')
-                        score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
+                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
                         scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
                         return await score_channel.send(
                             f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
@@ -140,13 +138,13 @@ class Listener(commands.Cog):
                                              f"homedelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
                         await game_channel.send(f'{home_role.mention} has reached the limit of 3 delays of game.\n\n'
                                                 f'The game is over! {away_role.mention} has won!\n\n'
                                                 f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
-                        score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
+                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
                         return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     else:
                         await self.bot.write(f"UPDATE games SET "
@@ -158,8 +156,8 @@ class Listener(commands.Cog):
                                              f"deadline = 'now'::timestamp + INTERVAL '1 day' "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         # This variable is shortened because the non shortened one was too spammy
                         m = await self.bot.db.fetchrow(f'SELECT seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2 FROM games WHERE gameid = {game["gameid"]}')
                         game_time = seconds_to_time(m["seconds"], m["extratime1"], m["extratime2"])
@@ -186,13 +184,13 @@ class Listener(commands.Cog):
                                              f"awaydelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
                         await game_channel.send(f'{away_role.mention} has reached the limit of 3 delays of game.\n\n'
                                                 f'The game is over! {home_role.mention} has won!\n\n'
                                                 f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
-                        score_channel = discord.utils.get(game_channel.guild.channels, name='scores')
+                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
                         return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     else:
                         await self.bot.write(f"UPDATE games SET "
@@ -204,8 +202,8 @@ class Listener(commands.Cog):
                                              f"deadline = 'now'::timestamp + INTERVAL '1 day' "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
                         # This variable is shortened because the non shortened one was too spammy
                         m = await self.bot.db.fetchrow(
                             f'SELECT seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2 FROM games WHERE gameid = {game["gameid"]}')
@@ -274,12 +272,12 @@ class Listener(commands.Cog):
 
                         if winner == 'HOME':
                             gameinfo = await self.bot.db.fetchrow(f'SELECT hometeam, awayteam, homeroleid FROM games WHERE gameid = {target_game_off[0]}')
-                            home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
+                            home_role = nextcord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
                             return await message.reply(f'{home_role.mention} won the coin toss. Please choose to **kick** off the ball now or to **defer** to the second half.\n'
                                                        f'{gameinfo["hometeam"].upper()} 0-0 {gameinfo["awayteam"].upper()} 0:00')
 
                         gameinfo = await self.bot.db.fetchrow(f'SELECT hometeam, awayteam, awayroleid FROM games WHERE gameid = {target_game_off[0]}')
-                        away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
+                        away_role = nextcord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                         return await message.reply(f'{away_role.mention} won the coin toss. Please choose to **kick** off the ball now or to **defer** to the second half.\n'
                                                    f'{gameinfo["hometeam"].upper()} 0-0 {gameinfo["awayteam"].upper()} 0:00')
 
@@ -306,8 +304,8 @@ class Listener(commands.Cog):
                             pass
 
                         gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, hometeam, awayteam, homeroleid, awayroleid FROM games WHERE gameid = {target_game_off[0]}')
-                        home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
+                        home_role = nextcord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
+                        away_role = nextcord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                         await message.reply(f'{home_role.mention if kickoff == "HOME" else away_role.mention} will kick off in the first half.\n\n'
                                             f'{gameinfo["hometeam"].upper()} 0-0 {gameinfo["awayteam"].upper()} 0:00\n\n'
                                             f'Waiting on defensive number')
@@ -379,8 +377,8 @@ class Listener(commands.Cog):
                     await result.send(self.bot, gameid=target_game_off[0], home_away=target_game_off[3].lower())
                     gameinfo = await self.bot.db.fetchrow(f'SELECT first_half_kickoff, isscrimmage, homescore, awayscore, seconds, waitingon, hometeam, awayteam, homeroleid, awayroleid, extratime1, extratime2, secondhalf, overtimegame FROM games WHERE gameid = {target_game_off[0]}')
                     seconds = gameinfo['seconds']
-                    home_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
-                    away_role = discord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
+                    home_role = nextcord.utils.get(message.channel.guild.roles, id=gameinfo['homeroleid'])
+                    away_role = nextcord.utils.get(message.channel.guild.roles, id=gameinfo['awayroleid'])
                     if gameinfo['waitingon'] == 'HOME':
                         mention_role = home_role
                         user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
@@ -436,7 +434,7 @@ class Listener(commands.Cog):
                                 writeup += f' {home_role.mention} and {away_role.mention} drew by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
                             writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
                             del self.offcache[target_game_off[4]]
-                            score_channel = discord.utils.get(message.guild.channels, name='scores')
+                            score_channel = nextcord.utils.get(message.guild.channels, name='scores')
                             if gameinfo['isscrimmage']:
                                 await score_channel.send(f'SCRIMMAGE: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
                             else:
@@ -462,7 +460,7 @@ class Listener(commands.Cog):
         except StopIteration:
             pass
         else:
-            if type(message.channel) is discord.DMChannel:
+            if type(message.channel) is nextcord.DMChannel:
                 if (target_game_def[3] == 'HOME' and target_game_def[1] == target_team) or (target_game_def[3] == 'AWAY' and target_game_def[2] == target_team):
                     defnumbers = [int(x) for x in message.content.split() if x.isdigit()]
 
@@ -490,17 +488,17 @@ class Listener(commands.Cog):
                     m = await self.bot.db.fetchrow(
                         f'SELECT gamestate, seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2, {role_to_get} FROM games WHERE gameid = {target_game_def[0]}')
                     game_time = seconds_to_time(m["seconds"], m["extratime1"], m["extratime2"])
-                    role = discord.utils.get(game_channel.guild.roles, id=m[role_to_get])
-                    gamestate = {'ATTACK': '{} has the ball on the opponents\' side of the field.'.format(role.mention),
-                                 'MIDFIELD': '{} has the ball at midfield.'.format(role.mention),
-                                 'DEFENSE': '{} has the ball in their own territory.'.format(role.mention),
-                                 'FREEKICK': '{} has a free kick.'.format(role.mention),
-                                 'SHOOTOUT': 'It\'s {}\'s turn in a shootout.'.format(role.mention),
-                                 'PENALTY': '{} has a penalty kick.'.format(role.mention)}[m['gamestate']]
+                    role = nextcord.utils.get(game_channel.guild.roles, id=m[role_to_get])
+                    gamestate = {'ATTACK': '{} has the ball on the opponents\' side of the field.',
+                                 'MIDFIELD': '{} has the ball at midfield.',
+                                 'DEFENSE': '{} has the ball in their own territory.',
+                                 'FREEKICK': '{} has a free kick.',
+                                 'SHOOTOUT': 'It\'s {}\'s turn in a shootout.',
+                                 'PENALTY': '{} has a penalty kick.'}[m['gamestate']]
                     await game_channel.send(OFFENSIVE_MESSAGE.format(mention=role.mention,
                                                                      hometeam=m['hometeam'].upper(),
                                                                      awayteam=m['awayteam'].upper(),
-                                                                     state=gamestate,
+                                                                     state=gamestate.format(role.mention),
                                                                      homescore=m['homescore'],
                                                                      awayscore=m['awayscore'],
                                                                      game_time=game_time))
