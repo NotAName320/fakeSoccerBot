@@ -56,7 +56,7 @@ class Listener(commands.Cog):
         return teamid
 
     async def user_id_from_team(self, teamid: str) -> int:
-        userid = await self.bot.db.fetchval("SELECT CASE WHEN substitute = null THEN manager ELSE substitute END FROM substitute FROM teams WHERE teamid = $1", teamid)
+        userid = await self.bot.db.fetchval("SELECT CASE WHEN substitute = null THEN manager ELSE substitute END FROM teams WHERE teamid = $1", teamid)
         return userid
 
     @tasks.loop(minutes=1)

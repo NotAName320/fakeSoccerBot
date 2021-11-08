@@ -56,7 +56,7 @@ async def login():
     db = await asyncpg.create_pool(**credentials['postgresql_creds'])
 
     # Initializes bot object
-    client = Bot(command_prefix='t!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
+    client = Bot(command_prefix='!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
 
     @client.event
     async def on_ready():
