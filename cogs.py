@@ -25,8 +25,8 @@ SOFTWARE.
 import inspect
 
 import asyncpg.exceptions
-import discord
-from discord.ext import commands
+import nextcord
+from nextcord.ext import commands
 
 import utils
 from discord_db_client import Bot
@@ -46,11 +46,11 @@ class Teams(commands.Cog):
         team_id = team_id.lower()
         team = await self.bot.db.fetchrow('SELECT * FROM teams WHERE teamid = $1', team_id)
         try:
-            c = discord.Color(int(team['color'], 16))
+            c = nextcord.Color(int(team['color'], 16))
         except TypeError:
             return await ctx.reply(f'Error: Team not found. Run {self.bot.command_prefix}teamlist to find a list of teams.')
         manager = self.bot.get_user(team['manager'])
-        embed = discord.Embed(title=f'{team["teamname"]} Team Info', color=c)
+        embed = nextcord.Embed(title=f'{team["teamname"]} Team Info', color=c)
         embed.add_field(name='Name', value=team['teamname'])
         embed.add_field(name='Team ID', value=team['teamid'])
         embed.add_field(name='Manager', value=manager.mention)
@@ -68,20 +68,20 @@ class Teams(commands.Cog):
         for team in teams:
             desc_string += f'{team["teamid"].upper()}: {team["teamname"]}\n'
         desc_string += '```'
-        embed = discord.Embed(title='Team IDs', description=desc_string, color=discord.Color(0x000000))
+        embed = nextcord.Embed(title='Team IDs', description=desc_string, color=nextcord.Color(0x000000))
         embed.set_footer(text=f'Page {page_number}')
         await ctx.reply(embed=embed)
 
     @commands.command(name='createteam', aliases=['addteam'])
     @commands.has_role('bot operator')
-    async def create_team(self, ctx, member: discord.Member, color: str, team_id: str, *, team_name: str):
+    async def create_team(self, ctx, member: nextcord.Member, color: str, team_id: str, *, team_name: str):
         """Creates a new team and adds it to the database."""
         team_id = team_id.lower()
         if len(team_id) > 7:
             return await ctx.reply('Error: Team ID too long.')
         query = 'INSERT INTO teams(teamid, teamname, manager, color) VALUES ($1, $2, $3, $4)'
         await self.bot.write(query, team_id, team_name, member.id, color)
-        color = discord.Color(int(color, 16))
+        color = nextcord.Color(int(color, 16))
         new_role = await ctx.guild.create_role(name=team_name)
         await new_role.edit(color=color)
         await member.add_roles(new_role)
@@ -94,23 +94,23 @@ class Teams(commands.Cog):
         # TODO: Automatically abandon games when the team is deleted.
         userteam = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', teamid)
         await self.bot.write('DELETE FROM teams WHERE teamid = $1', teamid)
-        role = (discord.utils.get(ctx.guild.roles, name=userteam))
+        role = (nextcord.utils.get(ctx.guild.roles, name=userteam))
         await role.delete()
         await ctx.reply(f'Success: Team {userteam} has been deleted.')
 
     @commands.command(name='addsubstitute', aliases=['addsub'])
     @commands.has_role('bot operator')
-    async def add_substitute(self, ctx, team_id: str, user: discord.Member):
+    async def add_substitute(self, ctx, team_id: str, user: nextcord.Member):
         """Adds a substitute for a team."""
         team_id = team_id.lower()
         team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute FROM teams WHERE teamid = $1', team_id)
         if team is not None:
             await self.bot.write(f"UPDATE teams SET substitute = {user.id} WHERE teamid = '{team_id}'")
-            team_role = discord.utils.get(ctx.guild.roles, name=team['teamname'])
-            existing_coach = discord.utils.get(ctx.guild.members, id=team['manager'])
+            team_role = nextcord.utils.get(ctx.guild.roles, name=team['teamname'])
+            existing_coach = nextcord.utils.get(ctx.guild.members, id=team['manager'])
             await existing_coach.remove_roles(team_role)
             if team['substitute'] is not None:
-                existing_sub = discord.utils.get(ctx.guild.members, id=team['substitute'])
+                existing_sub = nextcord.utils.get(ctx.guild.members, id=team['substitute'])
                 await existing_sub.remove_roles(team_role)
             await user.add_roles(team_role)
             await ctx.reply(f"{user.mention} you are now substitute manager of {team_role.mention}. Please give the bot at most a minute to refresh their cache.")
@@ -125,11 +125,11 @@ class Teams(commands.Cog):
         team = await self.bot.db.fetchrow('SELECT teamname, manager, substitute FROM teams WHERE teamid = $1', team_id)
         if team is not None:
             await self.bot.write(f"UPDATE teams SET substitute = NULL WHERE teamid = '{team_id}'")
-            team_role = discord.utils.get(ctx.guild.roles, name=team['teamname'])
-            existing_coach = discord.utils.get(ctx.guild.members, id=team['manager'])
+            team_role = nextcord.utils.get(ctx.guild.roles, name=team['teamname'])
+            existing_coach = nextcord.utils.get(ctx.guild.members, id=team['manager'])
             await existing_coach.add_roles(team_role)
             if team['substitute'] is not None:
-                existing_sub = discord.utils.get(ctx.guild.members, id=team['substitute'])
+                existing_sub = nextcord.utils.get(ctx.guild.members, id=team['substitute'])
                 await existing_sub.remove_roles(team_role)
             await ctx.reply(f"Substitute for team {team_role.mention} has been removed.")
         else:
@@ -154,14 +154,14 @@ class GameManagement(commands.Cog, name='Game Management'):
         away_team_exists = await self.bot.db.fetchval('SELECT EXISTS(SELECT 1 FROM teams WHERE teamid = $1)', awayteam)
 
         if home_team_exists and away_team_exists:
-            games_category = discord.utils.get(ctx.guild.categories, name='Game Threads')
+            games_category = nextcord.utils.get(ctx.guild.categories, name='Game Threads')
             channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
             away_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', awayteam)
 
-            home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
-            away_role = discord.utils.get(ctx.guild.roles, name=away_team_name)
+            home_role = nextcord.utils.get(ctx.guild.roles, name=home_team_name)
+            away_role = nextcord.utils.get(ctx.guild.roles, name=away_team_name)
 
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day')"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
@@ -193,14 +193,14 @@ class GameManagement(commands.Cog, name='Game Management'):
         away_team_exists = await self.bot.db.fetchval('SELECT EXISTS(SELECT 1 FROM teams WHERE teamid = $1)', awayteam)
 
         if home_team_exists and away_team_exists:
-            games_category = discord.utils.get(ctx.guild.categories, name='scrimmages')
+            games_category = nextcord.utils.get(ctx.guild.categories, name='scrimmages')
             channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}-scrim', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
             away_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', awayteam)
 
-            home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
-            away_role = discord.utils.get(ctx.guild.roles, name=away_team_name)
+            home_role = nextcord.utils.get(ctx.guild.roles, name=home_team_name)
+            away_role = nextcord.utils.get(ctx.guild.roles, name=away_team_name)
 
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, isscrimmage) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', true)"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
@@ -234,14 +234,14 @@ class GameManagement(commands.Cog, name='Game Management'):
         away_team_exists = await self.bot.db.fetchval('SELECT EXISTS(SELECT 1 FROM teams WHERE teamid = $1)', awayteam)
 
         if home_team_exists and away_team_exists:
-            games_category = discord.utils.get(ctx.guild.categories, name='Game Threads')
+            games_category = nextcord.utils.get(ctx.guild.categories, name='Game Threads')
             channel = await ctx.guild.create_text_channel(f'{hometeam}-{awayteam}', category=games_category)
 
             home_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', hometeam)
             away_team_name = await self.bot.db.fetchval('SELECT teamname FROM teams WHERE teamid = $1', awayteam)
 
-            home_role = discord.utils.get(ctx.guild.roles, name=home_team_name)
-            away_role = discord.utils.get(ctx.guild.roles, name=away_team_name)
+            home_role = nextcord.utils.get(ctx.guild.roles, name=home_team_name)
+            away_role = nextcord.utils.get(ctx.guild.roles, name=away_team_name)
 
             query = "INSERT INTO games(hometeam, awayteam, channelid, homeroleid, awayroleid, deadline, overtimegame) VALUES ($1, $2, $3, $4, $5, 'now'::timestamp + INTERVAL '1 day', true)"
             await self.bot.write(query, hometeam, awayteam, channel.id, home_role.id, away_role.id)
@@ -268,12 +268,12 @@ class GameManagement(commands.Cog, name='Game Management'):
         """Abandons a game in a channel."""
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, homescore, awayscore FROM games WHERE channelid = {ctx.channel.id}')
         try:
-            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
-            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+            home_role = nextcord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = nextcord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
         await self.bot.write(f"UPDATE games SET gamestate = 'ABANDONED' WHERE channelid = {ctx.channel.id}")
-        scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
+        scores_channel = nextcord.utils.get(ctx.guild.channels, name='scores')
         await scores_channel.send(f'GAME ABANDONED: {home_role.mention} {game["homescore"]}-{game["awayscore"]} {away_role.mention}')
         await ctx.reply('Game Abandoned. You may delete this channel at any time.')
 
@@ -283,12 +283,12 @@ class GameManagement(commands.Cog, name='Game Management'):
         """Forces a game to end in a channel."""
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, homescore, awayscore FROM games WHERE channelid = {ctx.channel.id}')
         try:
-            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
-            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+            home_role = nextcord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = nextcord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
         await self.bot.write(f"UPDATE games SET gamestate = 'FINAL' WHERE channelid = {ctx.channel.id}")
-        scores_channel = discord.utils.get(ctx.guild.channels, name='scores')
+        scores_channel = nextcord.utils.get(ctx.guild.channels, name='scores')
         await scores_channel.send(
             f'GAME ENDED EARLY: {home_role.mention} {game["homescore"]}-{game["awayscore"]} {away_role.mention}')
         writeup = f'The game was ended early by a bot operator.\n\nAnd that\'s the end of the game!'
@@ -307,8 +307,8 @@ class GameManagement(commands.Cog, name='Game Management'):
         """Toggles on or off force chew mode in a game channel."""
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid, default_chew FROM games WHERE channelid = {ctx.channel.id}')
         try:
-            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
-            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+            home_role = nextcord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = nextcord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
         if not game['default_chew']:
@@ -326,8 +326,8 @@ class GameManagement(commands.Cog, name='Game Management'):
             return await ctx.reply('Please specify home or away.')
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid FROM games WHERE channelid = {ctx.channel.id}')
         try:
-            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
-            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+            home_role = nextcord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = nextcord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
         await self.bot.write(f"UPDATE games SET {arg}score = {arg}score + 1 WHERE channelid = {ctx.channel.id}")
@@ -342,8 +342,8 @@ class GameManagement(commands.Cog, name='Game Management'):
             return await ctx.reply('Please specify home or away.')
         game = await self.bot.db.fetchrow(f'SELECT homeroleid, awayroleid FROM games WHERE channelid = {ctx.channel.id}')
         try:
-            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
-            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+            home_role = nextcord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = nextcord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
         await self.bot.write(f"UPDATE games SET {arg}score = {arg}score - 1 WHERE channelid = {ctx.channel.id}")
@@ -355,8 +355,8 @@ class GameManagement(commands.Cog, name='Game Management'):
         """Reruns the play. Asks the defense for the defensive number again."""
         game = await self.bot.db.fetchrow(f'SELECT hometeam, awayteam, homeroleid, awayroleid, homescore, awayscore, seconds, waitingon, def_off FROM games WHERE channelid = {ctx.channel.id}')
         try:
-            home_role = discord.utils.get(ctx.guild.roles, id=game['homeroleid'])
-            away_role = discord.utils.get(ctx.guild.roles, id=game['awayroleid'])
+            home_role = nextcord.utils.get(ctx.guild.roles, id=game['homeroleid'])
+            away_role = nextcord.utils.get(ctx.guild.roles, id=game['awayroleid'])
         except TypeError:
             return await ctx.reply('Error: Channel does not appear to be game channel.')
         if game['def_off'] == 'DEFENSE':
@@ -379,7 +379,7 @@ class GameManagement(commands.Cog, name='Game Management'):
 
 def generate_writeup_embed(writeup_record: asyncpg.Record):
     """Helper method for Writeups cog that generates a writeup embed based on the asyncpg.Record object returned."""
-    embed = discord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=discord.Color(0x000000))
+    embed = nextcord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=nextcord.Color(0x000000))
     embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
     embed.add_field(name="Result", value=writeup_record['result'])
     embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
@@ -450,9 +450,9 @@ class Eval(commands.Cog):
         """Evaluate string"""
         result = eval(arg)
         if inspect.isawaitable(result):
-            embed = discord.Embed(title='Eval', description=f'```py\n{await result}\n```', color=discord.Color(0x000000))
+            embed = nextcord.Embed(title='Eval', description=f'```py\n{await result}\n```', color=nextcord.Color(0x000000))
         else:
-            embed = discord.Embed(title='Eval', description=f'```py\n{result}\n```', color=discord.Color(0x000000))
+            embed = nextcord.Embed(title='Eval', description=f'```py\n{result}\n```', color=nextcord.Color(0x000000))
         await ctx.reply(embed=embed)
 
 

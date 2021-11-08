@@ -1,3 +1,2 @@
-nextcord
+nextcord[speed]
 asyncpg
-pytz

@@ -23,7 +23,7 @@ SOFTWARE.
 """
 
 from asyncpg import Pool
-from discord.ext import commands
+from nextcord.ext import commands
 
 
 class Bot(commands.Bot):

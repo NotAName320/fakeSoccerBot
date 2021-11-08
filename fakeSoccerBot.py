@@ -29,8 +29,8 @@ import sys
 import traceback
 
 import asyncpg
-import discord
-from discord.ext import commands
+import nextcord
+from nextcord.ext import commands
 
 from discord_db_client import Bot
 
@@ -50,13 +50,13 @@ async def login():
     token = credentials['discord_token']
 
     # Initializes some configuration objects
-    activity = discord.Activity(type=discord.ActivityType.watching, name='your soccer games!')
-    intents = discord.Intents.default()
+    activity = nextcord.Activity(type=nextcord.ActivityType.watching, name='your soccer games!')
+    intents = nextcord.Intents.default()
     intents.members = True
     db = await asyncpg.create_pool(**credentials['postgresql_creds'])
 
     # Initializes bot object
-    client = Bot(command_prefix='!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
+    client = Bot(command_prefix='t!', activity=activity, help_command=commands.MinimalHelpCommand(), intents=intents, db=db)
 
     @client.event
     async def on_ready():
@@ -72,12 +72,12 @@ async def login():
         exception = traceback.format_exc()
         print(exception, file=sys.stderr)
         if event == 'on_message':
-            message: discord.Message = args[0]
-            log_channel = discord.utils.get(message.guild.channels, name='logs')
+            message: nextcord.Message = args[0]
+            log_channel = nextcord.utils.get(message.guild.channels, name='logs')
             errordesc = f'```py\n' \
                         f'{exception}\n' \
                         f'```'
-            embed = discord.Embed(title='Error', description=errordesc, color=discord.Color(0x000000))
+            embed = nextcord.Embed(title='Error', description=errordesc, color=nextcord.Color(0x000000))
             await log_channel.send(content=f"Game error in channel {message.channel.mention}", embed=embed)
 
     @client.event
@@ -104,7 +104,7 @@ async def login():
             errordesc = f'```py\n' \
                         f'{"".join(traceback.format_exception(type(error), error, tb=error.__traceback__))}\n' \
                         f'```'
-            embed = discord.Embed(title='Error', description=errordesc, color=discord.Color(0x000000))
+            embed = nextcord.Embed(title='Error', description=errordesc, color=nextcord.Color(0x000000))
             embed.set_footer(text='Please contact NotAName#0591 for help.')
             await ctx.send(embed=embed)
 
@@ -124,9 +124,8 @@ async def login():
         await client.start(token)
     except KeyboardInterrupt:
         await db.close()
-        await client.logout()
+        await client.close()
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(login())
+    asyncio.run(login())
