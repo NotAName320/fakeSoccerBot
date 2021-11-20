@@ -250,7 +250,7 @@ class Listener(commands.Cog):
             try:
                 target_game_off = next(value for key, value in self.offcache.items() if target_team in value)
             except StopIteration:
-                continue
+                pass
             else:
                 if message.channel.id == list(self.offcache.keys())[list(self.offcache.values()).index(target_game_off)]:
                     if (target_game_off[3] == 'HOME' and target_game_off[1] == target_team) or (target_game_off[3] == 'AWAY' and target_game_off[2] == target_team):
