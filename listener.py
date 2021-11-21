@@ -51,6 +51,10 @@ class Listener(commands.Cog):
         self.refresh_game_team_cache.start()
         self.check_for_deadline.start()
 
+    def cog_unload(self):
+        self.refresh_game_team_cache.cancel()
+        self.check_for_deadline.cancel()
+
     async def team_id_from_user(self, userid: int):
         teamid = await self.bot.db.fetchval("SELECT teamid FROM teams WHERE manager = $1", userid)
         return teamid
@@ -512,3 +516,7 @@ class Listener(commands.Cog):
 
 def setup(bot: Bot):
     bot.add_cog(Listener(bot))
+
+
+def teardown(bot: Bot):
+    bot.remove_cog('Listener')
