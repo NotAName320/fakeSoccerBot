@@ -244,7 +244,7 @@ class Listener(commands.Cog):
         if message.content.startswith(self.bot.command_prefix) or message.author.id == self.bot.user.id:
             return
 
-        # Do not process messages that are not sent by a manager of the team, and assign that team to a variable
+        # Do not process messages that are not sent by a manager of the team, and assign those teams to a variable
         target_teams = (key for key, value in self.teamcache.items() if message.author.id == value[1])
         if target_teams == ():
             return
