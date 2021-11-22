@@ -82,7 +82,7 @@ async def login():
 
     @client.event
     async def on_command_error(ctx, error):
-        # Basic error handling, including generic messages to send for common errors
+        """Basic error handling, including generic messages to send for common errors"""
         error: Exception = getattr(error, 'original', error)
 
         if isinstance(error, commands.CommandNotFound):
