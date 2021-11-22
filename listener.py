@@ -270,7 +270,7 @@ class Listener(commands.Cog):
                                                  f"WHERE gameid = {gameid}")
 
                             try:
-                                self.offcache[game_channel_id] = self.offcache[game_channel_id][:2] + (winner, game_channel_id)
+                                self.offcache[game_channel_id] = self.offcache[game_channel_id][:3] + (winner, game_channel_id)
 
                             except KeyError:
                                 pass
@@ -303,7 +303,7 @@ class Listener(commands.Cog):
                                                  f"WHERE gameid = {gameid}")
 
                             try:
-                                self.defcache[game_channel_id] = self.offcache[game_channel_id][:2] + ('AWAY' if kickoff == 'HOME' else 'HOME', game_channel_id)
+                                self.defcache[game_channel_id] = self.offcache[game_channel_id][:3] + ('AWAY' if kickoff == 'HOME' else 'HOME', game_channel_id)
                                 del self.offcache[game_channel_id]
                             except KeyError:
                                 pass
@@ -449,7 +449,7 @@ class Listener(commands.Cog):
                         await message.reply(writeup)
 
                         try:
-                            self.defcache[game_channel_id] = self.offcache[game_channel_id][:2] + (waitingon, game_channel_id)
+                            self.defcache[game_channel_id] = self.offcache[game_channel_id][:3] + (waitingon, game_channel_id)
                             del self.offcache[game_channel_id]
                         except KeyError:
                             pass
@@ -507,7 +507,7 @@ class Listener(commands.Cog):
                                                                          awayscore=m['awayscore'],
                                                                          game_time=game_time))
                         try:
-                            self.offcache[game_channel_id] = self.defcache[game_channel_id][:2] + (waitingon, game_channel_id)
+                            self.offcache[game_channel_id] = self.defcache[game_channel_id][:3] + (waitingon, game_channel_id)
                             del self.defcache[game_channel_id]
                         except KeyError:
                             pass
