@@ -256,7 +256,7 @@ class Listener(commands.Cog):
                 pass
             else:
                 gameid, game_home, game_away, waiting_on_side, game_channel_id = target_game_off
-                if message.channel.id == list(self.offcache.keys())[list(self.offcache.values()).index(target_game_off)]:
+                if message.channel.id == game_channel_id:
                     if (waiting_on_side == 'HOME' and game_home == target_team) or (waiting_on_side == 'AWAY' and game_away == target_team):
                         field_position = await self.bot.db.fetchval(f"SELECT gamestate FROM games WHERE gameid = {gameid}")
                         if field_position == 'COIN_TOSS':
