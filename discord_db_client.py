@@ -27,7 +27,7 @@ from nextcord.ext import commands
 
 
 class Bot(commands.Bot):
-    """Represents both a connection to the PostgreSQL Client and Discord.."""
+    """Represents both a connection to the PostgreSQL Client and Discord."""
     def __init__(self, **kwargs):
         super().__init__(command_prefix=kwargs.pop('command_prefix'),
                          help_command=kwargs.pop('help_command'),
