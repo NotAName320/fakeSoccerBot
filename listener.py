@@ -438,7 +438,10 @@ class Listener(commands.Cog):
                                 else:
                                     writeup += f' {home_role.mention} and {away_role.mention} drew by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
                                 writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
-                                del self.offcache[game_channel_id]
+                                try:
+                                    del self.offcache[game_channel_id]
+                                except KeyError:
+                                    pass
                                 score_channel = nextcord.utils.get(message.guild.channels, name='scores')
                                 if gameinfo['isscrimmage']:
                                     await score_channel.send(f'SCRIMMAGE: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
