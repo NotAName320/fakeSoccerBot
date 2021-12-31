@@ -38,11 +38,14 @@ from discord_db_client import Bot
 async def login():
     """Logs into Discord and PostgreSQL and runs the bot."""
     # Sets up logging
-    logger = logging.getLogger('discord')
-    logger.setLevel(logging.WARNING)
+    logger = logging.Logger('fakeSoccerBot')
+    nextcord_logger = logging.getLogger('nextcord')
+    logger.setLevel(logging.INFO)
+    nextcord_logger.setLevel(logging.INFO)
     handler = logging.FileHandler(filename='bot.log', encoding='utf-8', mode='w')
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
     logger.addHandler(handler)
+    nextcord_logger.addHandler(handler)
 
     # Opens credentials.json and extracts bot token
     with open('credentials.json', 'r') as credentials_file:
@@ -70,14 +73,13 @@ async def login():
         """Prints out on_message listener errors to a logging channel."""
         print(f'Ignoring exception in {event}:', file=sys.stderr)
         exception = traceback.format_exc()
+        logger.error(exception)
         print(exception, file=sys.stderr)
         if event == 'on_message':
             message: nextcord.Message = args[0]
             log_channel = nextcord.utils.get(message.guild.channels, name='logs')
-            errordesc = f'```py\n' \
-                        f'{exception}\n' \
-                        f'```'
-            embed = nextcord.Embed(title='Error', description=errordesc, color=nextcord.Color(0x000000))
+            errordesc = f'```py\n{exception}\n```'
+            embed = nextcord.Embed(title='Error', description=errordesc, color=0)
             await log_channel.send(content=f"Game error in channel {message.channel.mention}", embed=embed)
 
     @client.event
@@ -98,12 +100,11 @@ async def login():
             await ctx.send(checkFailedMessage)
 
         else:
-            logger.error(traceback.format_exception(type(error), error, tb=error.__traceback__))
+            formatted_error = "".join(traceback.format_exception(type(error), error, tb=error.__traceback__))
+            logger.error(formatted_error)
             print(f'Exception in command {ctx.command}:', file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-            errordesc = f'```py\n' \
-                        f'{"".join(traceback.format_exception(type(error), error, tb=error.__traceback__))}\n' \
-                        f'```'
+            errordesc = f'```py\n{formatted_error}\n```'
             embed = nextcord.Embed(title='Error', description=errordesc, color=nextcord.Color(0x000000))
             embed.set_footer(text='Please contact NotAName#0591 for help.')
             await ctx.send(embed=embed)

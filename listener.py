@@ -398,56 +398,57 @@ class Listener(commands.Cog):
                         writeup = f'{writeup_text.format(offteam=home_role.mention if waiting_on_side == "HOME" else away_role.mention, defteam=home_role.mention if waiting_on_side == "AWAY" else away_role.mention)}\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                         extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
                         waitingon = gameinfo['waitingon']
-                        if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
-                            minutes_to_add = extra_time_bell_curve()
-                            await self.bot.write(f'UPDATE games SET extratime1 = {minutes_to_add} WHERE gameid = {gameid}')
-                            writeup += f'\n\nStoppage time for the first half has started. There will be {minutes_to_add} extra minutes.'
-                        elif gameinfo['seconds'] >= (2700+(extratime1*60)) and not gameinfo['secondhalf']:
-                            if gameinfo['first_half_kickoff'] == 'HOME':
-                                second_half_kickoff = 'AWAY'
-                                user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
-                            else:
-                                second_half_kickoff = 'HOME'
-                                user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
-                            await self.bot.write(f"UPDATE games SET gamestate = 'MIDFIELD', "
-                                                 f"def_off = 'DEFENSE'::def_off, "
-                                                 f"waitingon = '{'HOME' if second_half_kickoff == 'AWAY' else 'AWAY'}', "
-                                                 f"secondhalf = true,"
-                                                 f"seconds = 2700 + ({extratime1}*60) "
-                                                 f"WHERE gameid = {gameid}")
-                            seconds = 2700 + (extratime1 * 60)
-                            writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention if second_half_kickoff == "AWAY" else home_role.mention} getting the ball first.'
-                            user_to_dm = self.bot.get_user(user_to_dm)
-                            waitingon = gameinfo['first_half_kickoff']
-                        extratime2 = 0 if gameinfo['extratime2'] is None else gameinfo['extratime2']
-                        if gameinfo['seconds'] >= (5400+(extratime1*60)) and gameinfo['extratime2'] is None:
-                            minutes_to_add = extra_time_bell_curve()
-                            await self.bot.write(f'UPDATE games SET extratime2 = {minutes_to_add} WHERE gameid = {gameid}')
-                            writeup += f'\n\nStoppage time for the second half has started. There will be {minutes_to_add} extra minutes.'
-                        elif gameinfo['seconds'] >= (5400+(extratime1*60)+(extratime2*60)):
-                            if gameinfo['overtimegame']:
-                                pass  # TODO
-                            else:
-                                await self.bot.write(f"UPDATE games SET gamestate = 'FINAL' "
-                                                     f"WHERE gameid = {gameid}")
-                                writeup += f'\n\nAnd that\'s the end of the game!'
-                                if gameinfo['homescore'] > gameinfo['awayscore']:
-                                    writeup += f' {home_role.mention} has defeated {away_role.mention} by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
-                                elif gameinfo['awayscore'] > gameinfo['homescore']:
-                                    writeup += f' {away_role.mention} has defeated {home_role.mention} by a score of {gameinfo["awayscore"]}-{gameinfo["homescore"]}.'
+                        if outcome.name != 'PENALTY_KICK':
+                            if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
+                                minutes_to_add = extra_time_bell_curve()
+                                await self.bot.write(f'UPDATE games SET extratime1 = {minutes_to_add} WHERE gameid = {gameid}')
+                                writeup += f'\n\nStoppage time for the first half has started. There will be {minutes_to_add} extra minutes.'
+                            elif gameinfo['seconds'] >= (2700+(extratime1*60)) and not gameinfo['secondhalf']:
+                                if gameinfo['first_half_kickoff'] == 'HOME':
+                                    second_half_kickoff = 'AWAY'
+                                    user_to_dm = await self.user_id_from_team(gameinfo['hometeam'])
                                 else:
-                                    writeup += f' {home_role.mention} and {away_role.mention} drew by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
-                                writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
-                                try:
-                                    del self.offcache[game_channel_id]
-                                except KeyError:
-                                    pass
-                                score_channel = nextcord.utils.get(message.guild.channels, name='scores')
-                                if gameinfo['isscrimmage']:
-                                    await score_channel.send(f'SCRIMMAGE: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
+                                    second_half_kickoff = 'HOME'
+                                    user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
+                                await self.bot.write(f"UPDATE games SET gamestate = 'MIDFIELD', "
+                                                    f"def_off = 'DEFENSE'::def_off, "
+                                                    f"waitingon = '{'HOME' if second_half_kickoff == 'AWAY' else 'AWAY'}', "
+                                                    f"secondhalf = true,"
+                                                    f"seconds = 2700 + ({extratime1}*60) "
+                                                    f"WHERE gameid = {gameid}")
+                                seconds = 2700 + (extratime1 * 60)
+                                writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention if second_half_kickoff == "AWAY" else home_role.mention} getting the ball first.'
+                                user_to_dm = self.bot.get_user(user_to_dm)
+                                waitingon = gameinfo['first_half_kickoff']
+                            extratime2 = 0 if gameinfo['extratime2'] is None else gameinfo['extratime2']
+                            if gameinfo['seconds'] >= (5400+(extratime1*60)) and gameinfo['extratime2'] is None:
+                                minutes_to_add = extra_time_bell_curve()
+                                await self.bot.write(f'UPDATE games SET extratime2 = {minutes_to_add} WHERE gameid = {gameid}')
+                                writeup += f'\n\nStoppage time for the second half has started. There will be {minutes_to_add} extra minutes.'
+                            elif gameinfo['seconds'] >= (5400+(extratime1*60)+(extratime2*60)):
+                                if gameinfo['overtimegame']:
+                                    pass  # TODO
                                 else:
-                                    await score_channel.send(f'FINAL: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
-                                return await message.reply(writeup)
+                                    await self.bot.write(f"UPDATE games SET gamestate = 'FINAL' "
+                                                        f"WHERE gameid = {gameid}")
+                                    writeup += f'\n\nAnd that\'s the end of the game!'
+                                    if gameinfo['homescore'] > gameinfo['awayscore']:
+                                        writeup += f' {home_role.mention} has defeated {away_role.mention} by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
+                                    elif gameinfo['awayscore'] > gameinfo['homescore']:
+                                        writeup += f' {away_role.mention} has defeated {home_role.mention} by a score of {gameinfo["awayscore"]}-{gameinfo["homescore"]}.'
+                                    else:
+                                        writeup += f' {home_role.mention} and {away_role.mention} drew by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
+                                    writeup += ' Drive home safely!\nYou may delete this channel whenever you want.'
+                                    try:
+                                        del self.offcache[game_channel_id]
+                                    except KeyError:
+                                        pass
+                                    score_channel = nextcord.utils.get(message.guild.channels, name='scores')
+                                    if gameinfo['isscrimmage']:
+                                        await score_channel.send(f'SCRIMMAGE: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
+                                    else:
+                                        await score_channel.send(f'FINAL: {home_role.mention} {gameinfo["homescore"]}-{gameinfo["awayscore"]} {away_role.mention}')
+                                    return await message.reply(writeup)
 
                         await message.reply(writeup)
 
