@@ -69,7 +69,7 @@ class Listener(commands.Cog):
         self.offcache = {}
         self.defcache = {}
         self.teamcache = {}
-        games = await self.bot.db.fetch("SELECT gameid, channelid, hometeam, awayteam, def_off, waitingon, gamestate FROM games WHERE gamestate != 'FINAL'::gamestate AND gamestate != 'ABANDONED'::gamestate AND gamestate != 'FORFEIT'::gamestate")
+        games = await self.bot.db.fetch("SELECT gameid, channelid, hometeam, awayteam, def_off, waitingon, gamestate FROM games WHERE gamestate != 'FINAL' AND gamestate != 'ABANDONED' AND gamestate != 'FORFEIT'")
         for game in games:
             if game['gamestate'] in ['ABANDONED', 'FINAL', 'FORFEIT']:
                 # For some reason the connection bugs out and sometimes selects those games anyways. This is a hacky fix
@@ -88,7 +88,7 @@ class Listener(commands.Cog):
     @tasks.loop(hours=1)
     async def check_for_deadline(self):
         """Checks each active game and either gives warning, awards goal, or forfeits game."""
-        games = await self.bot.db.fetch("SELECT gameid, deadline FROM games WHERE gamestate != 'FINAL'::gamestate AND gamestate != 'ABANDONED'::gamestate AND gamestate != 'FORFEIT'::gamestate")
+        games = await self.bot.db.fetch("SELECT gameid, deadline FROM games WHERE gamestate != 'FINAL' AND gamestate != 'ABANDONED' AND gamestate != 'FORFEIT'")
         for game in games:
             if game['deadline'] - datetime.timedelta(hours=12) < nextcord.utils.utcnow() < game['deadline'] - datetime.timedelta(hours=11):
                 gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
@@ -411,7 +411,7 @@ class Listener(commands.Cog):
                                     second_half_kickoff = 'HOME'
                                     user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
                                 await self.bot.write(f"UPDATE games SET gamestate = 'MIDFIELD', "
-                                                    f"def_off = 'DEFENSE'::def_off, "
+                                                    f"def_off = 'DEFENSE', "
                                                     f"waitingon = '{'HOME' if second_half_kickoff == 'AWAY' else 'AWAY'}', "
                                                     f"secondhalf = true,"
                                                     f"seconds = 2700 + ({extratime1}*60) "

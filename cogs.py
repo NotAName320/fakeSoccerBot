@@ -364,7 +364,7 @@ class GameManagement(commands.Cog, name='Game Management'):
         else:
             waitingon = 'HOME' if game['waitingon'] == 'AWAY' else 'AWAY'
         await self.bot.write(f"UPDATE games SET "
-                             f"def_off = 'DEFENSE'::def_off, "
+                             f"def_off = 'DEFENSE', "
                              f"waitingon = '{waitingon}' "
                              f"WHERE channelid = {ctx.channel.id}")
         listener_cog = self.bot.get_cog('Listener')
@@ -397,7 +397,7 @@ class Writeups(commands.Cog):
         """Adds a writeup to the database."""
         state, result = state.upper(), result.upper()
         try:
-            await self.bot.write("INSERT INTO writeups(gamestate, result, writeuptext) VALUES ($1::gamestate, $2::results, $3::text)", state, result, writeup_text)
+            await self.bot.write("INSERT INTO writeups(gamestate, result, writeuptext) VALUES ($1, $2, $3)", state, result, writeup_text)
         except asyncpg.exceptions.InvalidTextRepresentationError:
             return await ctx.reply("Error: either your gamestate, result, or both are not valid.")
         writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups ORDER BY writeupid DESC LIMIT 1")
@@ -432,7 +432,7 @@ class Writeups(commands.Cog):
     @commands.command(name='editwriteup')
     async def edit_writeup(self, ctx, writeup_id: int, *, new_text: str):
         """Edits the text of the writeup."""
-        await self.bot.write("UPDATE writeups SET writeuptext = $1::text WHERE writeupid = $2", new_text, writeup_id)
+        await self.bot.write("UPDATE writeups SET writeuptext = $1 WHERE writeupid = $2", new_text, writeup_id)
         writeup_record = await self.bot.db.fetchrow("SELECT * FROM writeups WHERE writeupid = $1", writeup_id)
         if writeup_record is None:
             return await ctx.reply("Error: writeup not found.")
