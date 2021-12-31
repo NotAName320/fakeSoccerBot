@@ -46,7 +46,7 @@ class Teams(commands.Cog):
         team_id = team_id.lower()
         team = await self.bot.db.fetchrow('SELECT * FROM teams WHERE teamid = $1', team_id)
         try:
-            c = nextcord.Color(int(team['color'], 16))
+            c = int(team['color'], 16)
         except TypeError:
             return await ctx.reply(f'Error: Team not found. Run {self.bot.command_prefix}teamlist to find a list of teams.')
         manager = self.bot.get_user(team['manager'])
@@ -68,7 +68,7 @@ class Teams(commands.Cog):
         for team in teams:
             desc_string += f'{team["teamid"].upper()}: {team["teamname"]}\n'
         desc_string += '```'
-        embed = nextcord.Embed(title='Team IDs', description=desc_string, color=nextcord.Color(0x000000))
+        embed = nextcord.Embed(title='Team IDs', description=desc_string, color=0)
         embed.set_footer(text=f'Page {page_number}')
         await ctx.reply(embed=embed)
 
@@ -81,7 +81,7 @@ class Teams(commands.Cog):
             return await ctx.reply('Error: Team ID too long.')
         query = 'INSERT INTO teams(teamid, teamname, manager, color) VALUES ($1, $2, $3, $4)'
         await self.bot.write(query, team_id, team_name, member.id, color)
-        color = nextcord.Color(int(color, 16))
+        color = int(color, 16)
         new_role = await ctx.guild.create_role(name=team_name)
         await new_role.edit(color=color)
         await member.add_roles(new_role)
@@ -379,7 +379,7 @@ class GameManagement(commands.Cog, name='Game Management'):
 
 def generate_writeup_embed(writeup_record: asyncpg.Record):
     """Helper method for Writeups cog that generates a writeup embed based on the asyncpg.Record object returned."""
-    embed = nextcord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=nextcord.Color(0x000000))
+    embed = nextcord.Embed(title="Writeup Information", description=f"```\n{writeup_record['writeuptext']}\n```", color=0)
     embed.add_field(name="Gamestate", value=writeup_record['gamestate'])
     embed.add_field(name="Result", value=writeup_record['result'])
     embed.add_field(name="Disabled?", value="Y" if writeup_record['disabled'] else "N")
@@ -450,10 +450,8 @@ class Eval(commands.Cog):
         """Evaluate string"""
         result = eval(arg)
         if inspect.isawaitable(result):
-            embed = nextcord.Embed(title='Eval', description=f'```py\n{await result}\n```', color=nextcord.Color(0x000000))
-        else:
-            embed = nextcord.Embed(title='Eval', description=f'```py\n{result}\n```', color=nextcord.Color(0x000000))
-        await ctx.reply(embed=embed)
+            result = await result
+        await ctx.reply(embed=nextcord.Embed(title='Eval', description=f'```py\n{result}\n```', color=0))
 
 
 def setup(bot: Bot):

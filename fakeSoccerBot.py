@@ -105,7 +105,7 @@ async def login():
             print(f'Exception in command {ctx.command}:', file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             errordesc = f'```py\n{formatted_error}\n```'
-            embed = nextcord.Embed(title='Error', description=errordesc, color=nextcord.Color(0x000000))
+            embed = nextcord.Embed(title='Error', description=errordesc, color=0)
             embed.set_footer(text='Please contact NotAName#0591 for help.')
             await ctx.send(embed=embed)
 
