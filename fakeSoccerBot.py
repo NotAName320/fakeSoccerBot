@@ -88,16 +88,11 @@ async def login():
         error: Exception = getattr(error, 'original', error)
 
         if isinstance(error, commands.CommandNotFound):
-            notFoundMessage = f"Your command was not recognized. Please refer to {client.command_prefix}help for more info."
-            await ctx.send(notFoundMessage)
-
-        elif isinstance(error, commands.MissingRequiredArgument):
-            missingMessage = "Error: you did not provide the required argument(s). Make sure you typed the command correctly."
-            await ctx.send(missingMessage)
-
-        elif isinstance(error, commands.CheckFailure):
-            checkFailedMessage = "Error: you do not have permissions to use this command."
-            await ctx.send(checkFailedMessage)
+            return await ctx.reply(f"Your command was not recognized. Please refer to {client.command_prefix}help for more info.")
+        if isinstance(error, commands.MissingRequiredArgument):
+            return await ctx.reply("Error: you did not provide the required argument(s). Make sure you typed the command correctly.")
+        if isinstance(error, commands.CheckFailure):
+            return await ctx.reply("Error: You do not have permission to use this command.")
 
         else:
             formatted_error = "".join(traceback.format_exception(type(error), error, tb=error.__traceback__))
@@ -106,7 +101,8 @@ async def login():
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             errordesc = f'```py\n{formatted_error}\n```'
             embed = nextcord.Embed(title='Error', description=errordesc, color=0)
-            embed.set_footer(text='Please contact NotAName#0591 for help.')
+            app_info = await client.application_info()
+            embed.set_footer(text=f'Please contact {app_info.owner} for help.')
             await ctx.send(embed=embed)
 
     @client.command()
