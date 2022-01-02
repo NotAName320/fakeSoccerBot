@@ -29,12 +29,8 @@ from nextcord.ext import commands
 class Bot(commands.Bot):
     """Represents both a connection to the PostgreSQL Client and Discord."""
     def __init__(self, **kwargs):
-        super().__init__(command_prefix=kwargs.pop('command_prefix'),
-                         help_command=kwargs.pop('help_command'),
-                         activity=kwargs.pop('activity'),
-                         intents=kwargs.pop('intents'))
-
         self.db: Pool = kwargs.pop('db')
+        super().__init__(**kwargs)
 
     async def write(self, query: str, *args):
         """Write something to the database."""
