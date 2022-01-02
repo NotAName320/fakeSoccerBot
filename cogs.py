@@ -108,10 +108,12 @@ class Teams(commands.Cog):
             await self.bot.write(f"UPDATE teams SET substitute = {user.id} WHERE teamid = '{team_id}'")
             team_role = nextcord.utils.get(ctx.guild.roles, name=team['teamname'])
             existing_coach = nextcord.utils.get(ctx.guild.members, id=team['manager'])
-            await existing_coach.remove_roles(team_role)
-            if team['substitute'] is not None:
+            if existing_coach:
+                await existing_coach.remove_roles(team_role)
+            if team['substitute']:
                 existing_sub = nextcord.utils.get(ctx.guild.members, id=team['substitute'])
-                await existing_sub.remove_roles(team_role)
+                if existing_sub:
+                    await existing_sub.remove_roles(team_role)
             await user.add_roles(team_role)
             await ctx.reply(f"{user.mention} you are now substitute manager of {team_role.mention}. Please give the bot at most a minute to refresh their cache.")
         else:
@@ -127,10 +129,12 @@ class Teams(commands.Cog):
             await self.bot.write(f"UPDATE teams SET substitute = NULL WHERE teamid = '{team_id}'")
             team_role = nextcord.utils.get(ctx.guild.roles, name=team['teamname'])
             existing_coach = nextcord.utils.get(ctx.guild.members, id=team['manager'])
-            await existing_coach.add_roles(team_role)
-            if team['substitute'] is not None:
+            if existing_coach:
+                await existing_coach.add_roles(team_role)
+            if team['substitute']:
                 existing_sub = nextcord.utils.get(ctx.guild.members, id=team['substitute'])
-                await existing_sub.remove_roles(team_role)
+                if existing_sub:
+                    await existing_sub.remove_roles(team_role)
             await ctx.reply(f"Substitute for team {team_role.mention} has been removed.")
         else:
             return await ctx.reply("Error: Team not found.")
