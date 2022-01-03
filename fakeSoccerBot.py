@@ -1,3 +1,4 @@
+
 """
 Bot to simulate a soccer game using the principles of number guessing
 
@@ -43,13 +44,13 @@ async def login():
     nextcord_logger = logging.getLogger('nextcord')
     logger.setLevel(logging.INFO)
     nextcord_logger.setLevel(logging.INFO)
-    handler = logging.FileHandler(filename=f'{os.path.realpath(__file__)}{os.sep}..{os.sep}bot.log', encoding='utf-8', mode='w')
+    handler = logging.FileHandler(filename=f'{os.path.dirname(os.path.realpath(__file__))}{os.sep}bot.log', encoding='utf-8', mode='w')
     handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
     logger.addHandler(handler)
     nextcord_logger.addHandler(handler)
 
     # Opens credentials.json and extracts bot token
-    with open(f'{os.path.realpath(__file__)}{os.sep}..{os.sep}credentials.json', 'r') as credentials_file:
+    with open(f'{os.path.dirname(os.path.realpath(__file__))}{os.sep}credentials.json', 'r') as credentials_file:
         credentials = json.load(credentials_file)
     token = credentials['discord_token']
 
