@@ -93,7 +93,7 @@ class Listener(commands.Cog):
             if game['deadline'] - datetime.timedelta(hours=12) < nextcord.utils.utcnow() < game['deadline'] - datetime.timedelta(hours=11):
                 gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
                 channel = self.bot.get_channel(gameinfo['channelid'])
-                user_to_ping = nextcord.utils.get(channel.guild.roles, id=gameinfo['homeroleid']) if gameinfo['waitingon'] == 'HOME' else nextcord.utils.get(channel.guild.roles, id=gameinfo['awayroleid'])
+                user_to_ping = nextcord.utils.get(channel.guild.roles, id=gameinfo['homeroleid'] if gameinfo['waitingon'] == 'HOME' else gameinfo['awayroleid'])
                 return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\nFailure to submit will lead to concession of a goal and/or a forfeit.')
 
             if game['deadline'] < nextcord.utils.utcnow():
@@ -171,7 +171,7 @@ class Listener(commands.Cog):
                                                 f'{game_time}\n\n'
                                                 f'Waiting on {away_role.mention} for defensive number')
                         defensive_user_id = await self.bot.db.fetchval(
-                            f"SELECT manager FROM teams WHERE teamid = '{m['awayteam']}'")
+                            f"CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['awayteam']}'")
                         defensive_user = self.bot.get_user(defensive_user_id)
                         await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
                                                                            awayteam=m['awayteam'].upper(),
@@ -219,7 +219,7 @@ class Listener(commands.Cog):
                             f'{game_time}\n\n'
                             f'Waiting on {home_role.mention} for defensive number')
                         defensive_user_id = await self.bot.db.fetchval(
-                            f"SELECT manager FROM teams WHERE teamid = '{m['hometeam']}'")
+                            f"CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['hometeam']}'")
                         defensive_user = self.bot.get_user(defensive_user_id)
                         await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
                                                                            awayteam=m['awayteam'].upper(),
@@ -411,11 +411,11 @@ class Listener(commands.Cog):
                                     second_half_kickoff = 'HOME'
                                     user_to_dm = await self.user_id_from_team(gameinfo['awayteam'])
                                 await self.bot.write(f"UPDATE games SET gamestate = 'MIDFIELD', "
-                                                    f"def_off = 'DEFENSE', "
-                                                    f"waitingon = '{'HOME' if second_half_kickoff == 'AWAY' else 'AWAY'}', "
-                                                    f"secondhalf = true,"
-                                                    f"seconds = 2700 + ({extratime1}*60) "
-                                                    f"WHERE gameid = {gameid}")
+                                                     f"def_off = 'DEFENSE', "
+                                                     f"waitingon = '{'HOME' if second_half_kickoff == 'AWAY' else 'AWAY'}', "
+                                                     f"secondhalf = true,"
+                                                     f"seconds = 2700 + ({extratime1}*60) "
+                                                     f"WHERE gameid = {gameid}")
                                 seconds = 2700 + (extratime1 * 60)
                                 writeup += f'\n\nAnd that\'s the end of the first half! The second half will begin at midfield with {away_role.mention if second_half_kickoff == "AWAY" else home_role.mention} getting the ball first.'
                                 user_to_dm = self.bot.get_user(user_to_dm)
@@ -430,7 +430,7 @@ class Listener(commands.Cog):
                                     pass  # TODO
                                 else:
                                     await self.bot.write(f"UPDATE games SET gamestate = 'FINAL' "
-                                                        f"WHERE gameid = {gameid}")
+                                                         f"WHERE gameid = {gameid}")
                                     writeup += f'\n\nAnd that\'s the end of the game!'
                                     if gameinfo['homescore'] > gameinfo['awayscore']:
                                         writeup += f' {home_role.mention} has defeated {away_role.mention} by a score of {gameinfo["homescore"]}-{gameinfo["awayscore"]}.'
