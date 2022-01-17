@@ -102,8 +102,8 @@ class Listener(commands.Cog):
                     if gameinfo['waitingon'] == 'HOME':
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END, "
+                                             f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
+                                             f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END), "
                                              f"homedelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
@@ -118,8 +118,8 @@ class Listener(commands.Cog):
                     else:
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END, "
+                                             f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END), "
+                                             f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END), "
                                              f"awaydelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
@@ -137,8 +137,8 @@ class Listener(commands.Cog):
                     if gameinfo['homedelays'] == 2:
                         await self.bot.write(f"UPDATE games SET "
                                              f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END, "
+                                             f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
+                                             f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END), "
                                              f"homedelays = 3 "
                                              f"WHERE gameid = {game['gameid']}")
                         game_channel = self.bot.get_channel(gameinfo['channelid'])
@@ -219,7 +219,7 @@ class Listener(commands.Cog):
                             f'{game_time}\n\n'
                             f'Waiting on {home_role.mention} for defensive number')
                         defensive_user_id = await self.bot.db.fetchval(
-                            f"CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['hometeam']}'")
+                            f"SELECT CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['hometeam']}'")
                         defensive_user = self.bot.get_user(defensive_user_id)
                         await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
                                                                            awayteam=m['awayteam'].upper(),
