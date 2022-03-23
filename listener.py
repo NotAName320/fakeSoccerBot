@@ -171,7 +171,7 @@ class Listener(commands.Cog):
                                                 f'{game_time}\n\n'
                                                 f'Waiting on {away_role.mention} for defensive number')
                         defensive_user_id = await self.bot.db.fetchval(
-                            f"SELECT (CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['awayteam']}')")
+                            f"SELECT (CASE WHEN substitute IS NULL THEN manager ELSE substitute END) FROM teams WHERE teamid = '{m['awayteam']}'")
                         defensive_user = self.bot.get_user(defensive_user_id)
                         await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
                                                                            awayteam=m['awayteam'].upper(),
