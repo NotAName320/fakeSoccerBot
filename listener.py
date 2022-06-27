@@ -505,6 +505,7 @@ class Listener(commands.Cog):
                                      'DEFENSE': '{} has the ball in their own territory.',
                                      'FREEKICK': '{} has a free kick.',
                                      'SHOOTOUT': 'It\'s {}\'s turn in a shootout.',
+                                     'BREAKAWAY': '{} is breaking away with the ball!',
                                      'PENALTY': '{} has a penalty kick.'}[m['gamestate']]
                         await game_channel.send(OFFENSIVE_MESSAGE.format(mention=role.mention,
                                                                          hometeam=m['hometeam'].upper(),
