@@ -35,11 +35,14 @@ class Results(Enum):
     ATTACK = 4
     MIDFIELD = 5
     DEFENSE = 6
-    TURNOVER_DEFENSE = 7  # Refers to the state now being defense, not ball being on other side
-    TURNOVER_MIDFIELD = 8
-    TURNOVER_ATTACK = 9
-    TURNOVER_FREE_KICK = 10
-    OPPOSING_GOAL = 11
+    BREAKAWAY = 7
+    TURNOVER_DEFENSE = 8  # Refers to the state now being defense, not ball being on other side
+    TURNOVER_MIDFIELD = 9
+    TURNOVER_ATTACK = 10
+    TURNOVER_FREE_KICK = 11
+    TURNOVER_BREAKAWAY = 12
+    TURNOVER_PENALTY = 13
+    OPPOSING_GOAL = 14
 
 
 RangeDict = Dict[int, Results]
@@ -50,52 +53,71 @@ ATTACK: RangeDict = {
     21: Results.PENALTY_KICK,
     26: Results.FREE_KICK,
     51: Results.ATTACK,
-    176: Results.MIDFIELD,
-    251: Results.TURNOVER_DEFENSE,
-    351: Results.TURNOVER_MIDFIELD,
-    470: Results.TURNOVER_ATTACK,
-    485: Results.TURNOVER_FREE_KICK,
+    201: Results.MIDFIELD,
+    301: Results.TURNOVER_DEFENSE,
+    381: Results.TURNOVER_MIDFIELD,
+    441: Results.TURNOVER_ATTACK,
+    471: Results.TURNOVER_FREE_KICK,
+    495: Results.TURNOVER_BREAKAWAY,
     500: Results.OPPOSING_GOAL
 }
 
 MIDFIELD: RangeDict = {
     0: Results.GOAL,
     11: Results.PENALTY_KICK,
-    13: Results.FREE_KICK,
-    16: Results.ATTACK,
+    13: Results.BREAKAWAY,
+    28: Results.FREE_KICK,
+    41: Results.ATTACK,
     151: Results.MIDFIELD,
-    276: Results.TURNOVER_DEFENSE,
-    326: Results.TURNOVER_MIDFIELD,
-    401: Results.TURNOVER_ATTACK,
-    470: Results.TURNOVER_FREE_KICK,
-    498: Results.OPPOSING_GOAL
+    276: Results.DEFENSE,
+    326: Results.TURNOVER_DEFENSE,
+    383: Results.TURNOVER_MIDFIELD,
+    431: Results.TURNOVER_ATTACK,
+    466: Results.TURNOVER_FREE_KICK,
+    490: Results.TURNOVER_BREAKAWAY,
+    499: Results.OPPOSING_GOAL
 }
 
 DEFENSE: RangeDict = {
     0: Results.GOAL,
     1: Results.PENALTY_KICK,
-    3: Results.FREE_KICK,
-    6: Results.ATTACK,
-    51: Results.MIDFIELD,
-    226: Results.DEFENSE,
+    3: Results.BREAKAWAY,
+    23: Results.FREE_KICK,
+    31: Results.ATTACK,
+    101: Results.MIDFIELD,
+    201: Results.DEFENSE,
     351: Results.TURNOVER_MIDFIELD,
     421: Results.TURNOVER_ATTACK,
-    470: Results.TURNOVER_FREE_KICK,
-    495: Results.OPPOSING_GOAL
+    461: Results.TURNOVER_FREE_KICK,
+    495: Results.TURNOVER_PENALTY,
+    498: Results.OPPOSING_GOAL
 }
 
 FREE_KICK: RangeDict = {
     0: Results.GOAL,
     36: Results.ATTACK,
-    226: Results.MIDFIELD,
-    301: Results.TURNOVER_DEFENSE,
+    201: Results.MIDFIELD,
+    276: Results.TURNOVER_DEFENSE,
     376: Results.TURNOVER_MIDFIELD,
-    470: Results.TURNOVER_ATTACK,
-    485: Results.TURNOVER_FREE_KICK,
-    499: Results.OPPOSING_GOAL
+    451: Results.TURNOVER_ATTACK,
+    476: Results.TURNOVER_FREE_KICK,
+    493: Results.TURNOVER_BREAKAWAY,
+    500: Results.OPPOSING_GOAL
 }
 
 PENALTY: RangeDict = {
     0: Results.GOAL,
     326: Results.TURNOVER_DEFENSE
+}
+
+BREAKAWAY: RangeDict = {
+    0: Results.GOAL,
+    81: Results.ATTACK,
+    201: Results.MIDFIELD,
+    251: Results.TURNOVER_DEFENSE,
+    371: Results.TURNOVER_MIDFIELD,
+    461: Results.TURNOVER_ATTACK,
+    481: Results.TURNOVER_FREE_KICK,
+    495: Results.TURNOVER_BREAKAWAY,
+    500: Results.OPPOSING_GOAL
 }

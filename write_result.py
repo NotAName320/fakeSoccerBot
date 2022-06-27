@@ -45,11 +45,11 @@ class DBResult:
     async def send(self, client: Bot, gameid: int, home_away: Literal['home', 'away']):
         """Commits result to the database."""
         if self.clock_use == ClockUse.HURRY:
-            seconds_to_add = 30
-        elif self.clock_use == ClockUse.CHEW:
             seconds_to_add = 60
+        elif self.clock_use == ClockUse.CHEW:
+            seconds_to_add = 90
         else:
-            seconds_to_add = 45
+            seconds_to_add = 75
         if home_away == 'home':
             opposite = 'away'
             home_score_to_add = 1 if self.result is Results.GOAL else 0
@@ -58,7 +58,7 @@ class DBResult:
             opposite = 'home'
             home_score_to_add = 1 if self.result is Results.OPPOSING_GOAL else 0
             away_score_to_add = 1 if self.result is Results.GOAL else 0
-        if self.result in [Results.GOAL, Results.TURNOVER_ATTACK, Results.TURNOVER_MIDFIELD, Results.TURNOVER_DEFENSE, Results.TURNOVER_FREE_KICK]:
+        if self.result in [Results.GOAL, Results.TURNOVER_ATTACK, Results.TURNOVER_MIDFIELD, Results.TURNOVER_DEFENSE, Results.TURNOVER_FREE_KICK, Results.TURNOVER_PENALTY]:
             waitingon = home_away
         else:
             waitingon = opposite
@@ -70,6 +70,8 @@ class DBResult:
             field_position = 'DEFENSE'
         elif self.result in [Results.FREE_KICK, Results.TURNOVER_FREE_KICK]:
             field_position = 'FREEKICK'
+        elif self.result in [Results.BREAKAWAY, Results.TURNOVER_BREAKAWAY]:
+            field_position = 'BREAKAWAY'
         else:
             field_position = 'PENALTY'
         await client.write(f"UPDATE games SET "

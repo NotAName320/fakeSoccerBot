@@ -29,7 +29,7 @@ import nextcord
 from nextcord.ext import commands, tasks
 
 from discord_db_client import Bot
-from ranges import ATTACK, MIDFIELD, DEFENSE, FREE_KICK, PENALTY
+from ranges import ATTACK, MIDFIELD, DEFENSE, FREE_KICK, PENALTY, BREAKAWAY
 from utils import seconds_to_time, calculate_diff, extra_time_bell_curve
 from write_result import ClockUse, DBResult
 
@@ -369,6 +369,9 @@ class Listener(commands.Cog):
                         if field_position == 'DEFENSE':
                             ranges = DEFENSE
 
+                        if field_position == 'BREAKAWAY':
+                            ranges = BREAKAWAY
+
                         outcome = None
                         previous_value = list(ranges.values())[0]
                         for key, value in ranges.items():
@@ -394,11 +397,11 @@ class Listener(commands.Cog):
 
                         writeup_text = await self.bot.db.fetchval(f"SELECT writeuptext FROM writeups WHERE gamestate = '{field_position}' AND result = '{outcome.name}' AND disabled = FALSE ORDER BY random() LIMIT 1")
                         if writeup_text is None:
-                            writeup_text = "If you're seeing this, the writeup is glitched. Oh well."
+                            writeup_text = f"If you're seeing this, no writeup could be found. The result was {outcome.name}."
                         writeup = f'{writeup_text.format(offteam=home_role.mention if waiting_on_side == "HOME" else away_role.mention, defteam=home_role.mention if waiting_on_side == "AWAY" else away_role.mention)}\n\nOffensive Number: {offnumbers}\nDefensive Number: {defnumber}\nDiff: {diff}\nResult: {outcome.name}\n\n{mention_role.mention}'
                         extratime1 = 0 if gameinfo['extratime1'] is None else gameinfo['extratime1']  # To avoid TypeErrors
                         waitingon = gameinfo['waitingon']
-                        if outcome.name != 'PENALTY_KICK':
+                        if outcome.name not in ['PENALTY_KICK', 'FREE_KICK', 'TURNOVER_FREE_KICK', 'TURNOVER_PENALTY', 'BREAKAWAY', 'TURNOVER_BREAKAWAY']:
                             if gameinfo['seconds'] >= 2700 and gameinfo['extratime1'] is None:
                                 minutes_to_add = extra_time_bell_curve()
                                 await self.bot.write(f'UPDATE games SET extratime1 = {minutes_to_add} WHERE gameid = {gameid}')
