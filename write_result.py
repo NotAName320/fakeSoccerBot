@@ -52,13 +52,13 @@ class DBResult:
             seconds_to_add = 75
         if home_away == 'home':
             opposite = 'away'
-            home_score_to_add = 1 if self.result is Results.GOAL else 0
-            away_score_to_add = 1 if self.result is Results.OPPOSING_GOAL else 0
+            home_score_to_add = int(self.result is Results.GOAL)
+            away_score_to_add = int(self.result is Results.OPPOSING_GOAL)
         else:
             opposite = 'home'
-            home_score_to_add = 1 if self.result is Results.OPPOSING_GOAL else 0
-            away_score_to_add = 1 if self.result is Results.GOAL else 0
-        if self.result in [Results.GOAL, Results.TURNOVER_ATTACK, Results.TURNOVER_MIDFIELD, Results.TURNOVER_DEFENSE, Results.TURNOVER_FREE_KICK, Results.TURNOVER_PENALTY]:
+            home_score_to_add = int(self.result is Results.OPPOSING_GOAL)
+            away_score_to_add = int(self.result is Results.GOAL)
+        if self.result in [Results.GOAL, Results.TURNOVER_ATTACK, Results.TURNOVER_MIDFIELD, Results.TURNOVER_DEFENSE, Results.TURNOVER_FREE_KICK, Results.TURNOVER_PENALTY, Results.TURNOVER_BREAKAWAY]:
             waitingon = home_away
         else:
             waitingon = opposite
