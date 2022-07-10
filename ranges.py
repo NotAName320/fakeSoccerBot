@@ -107,7 +107,7 @@ FREE_KICK: RangeDict = {
 
 PENALTY: RangeDict = {
     0: Results.GOAL,
-    326: Results.TURNOVER_DEFENSE
+    376: Results.TURNOVER_DEFENSE
 }
 
 BREAKAWAY: RangeDict = {
