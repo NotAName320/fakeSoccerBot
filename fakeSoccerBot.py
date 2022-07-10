@@ -58,6 +58,7 @@ async def login():
     activity = nextcord.Activity(type=nextcord.ActivityType.watching, name='your soccer games!')
     intents = nextcord.Intents.default()
     intents.members = True
+    intents.message_content = True
     db = await asyncpg.create_pool(**credentials['postgresql_creds'])
 
     # Initializes bot object
