@@ -90,148 +90,151 @@ class Listener(commands.Cog):
         """Checks each active game and either gives warning, awards goal, or forfeits game."""
         games = await self.bot.db.fetch("SELECT gameid, deadline FROM games WHERE gamestate != 'FINAL' AND gamestate != 'ABANDONED' AND gamestate != 'FORFEIT'")
         for game in games:
-            if game['deadline'] - datetime.timedelta(hours=12) < nextcord.utils.utcnow() < game['deadline'] - datetime.timedelta(hours=11):
-                gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
-                channel = self.bot.get_channel(gameinfo['channelid'])
-                user_to_ping = nextcord.utils.get(channel.guild.roles, id=gameinfo['homeroleid'] if gameinfo['waitingon'] == 'HOME' else gameinfo['awayroleid'])
-                return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\nFailure to submit will lead to concession of a goal and/or a forfeit.')
+            try:
+                if game['deadline'] - datetime.timedelta(hours=12) < nextcord.utils.utcnow() < game['deadline'] - datetime.timedelta(hours=11):
+                    gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
+                    channel = self.bot.get_channel(gameinfo['channelid'])
+                    user_to_ping = nextcord.utils.get(channel.guild.roles, id=gameinfo['homeroleid'] if gameinfo['waitingon'] == 'HOME' else gameinfo['awayroleid'])
+                    return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\nFailure to submit will lead to concession of a goal and/or a forfeit.')
 
-            if game['deadline'] < nextcord.utils.utcnow():
-                gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
-                if gameinfo['gamestate'] == 'SHOOTOUT':
+                if game['deadline'] < nextcord.utils.utcnow():
+                    gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
+                    if gameinfo['gamestate'] == 'SHOOTOUT':
+                        if gameinfo['waitingon'] == 'HOME':
+                            await self.bot.write(f"UPDATE games SET "
+                                                 f"gamestate = 'FORFEIT', "
+                                                 f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
+                                                 f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END), "
+                                                 f"homedelays = 3 "
+                                                 f"WHERE gameid = {game['gameid']}")
+                            game_channel = self.bot.get_channel(gameinfo['channelid'])
+                            home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                            away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                            await game_channel.send(f'{home_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
+                                                    f'The game is over! {away_role.mention} has won!\n\n'
+                                                    f'The score is 0-3.')
+                            scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
+                            score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
+                            return await score_channel.send(f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                        else:
+                            await self.bot.write(f"UPDATE games SET "
+                                                 f"gamestate = 'FORFEIT', "
+                                                 f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END), "
+                                                 f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END), "
+                                                 f"awaydelays = 3 "
+                                                 f"WHERE gameid = {game['gameid']}")
+                            game_channel = self.bot.get_channel(gameinfo['channelid'])
+                            home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                            away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                            await game_channel.send(
+                                f'{away_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
+                                f'The game is over! {home_role.mention} has won!\n\n'
+                                f'The score is 0-3.')
+                            score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
+                            scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
+                            return await score_channel.send(
+                                f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     if gameinfo['waitingon'] == 'HOME':
-                        await self.bot.write(f"UPDATE games SET "
-                                             f"gamestate = 'FORFEIT', "
-                                             f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
-                                             f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END), "
-                                             f"homedelays = 3 "
-                                             f"WHERE gameid = {game['gameid']}")
-                        game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
-                        await game_channel.send(f'{home_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
-                                                f'The game is over! {away_role.mention} has won!\n\n'
-                                                f'The score is 0-3.')
-                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
-                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                        return await score_channel.send(f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                        if gameinfo['homedelays'] == 2:
+                            await self.bot.write(f"UPDATE games SET "
+                                                 f"gamestate = 'FORFEIT', "
+                                                 f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
+                                                 f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END), "
+                                                 f"homedelays = 3 "
+                                                 f"WHERE gameid = {game['gameid']}")
+                            game_channel = self.bot.get_channel(gameinfo['channelid'])
+                            home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                            away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                            scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
+                            await game_channel.send(f'{home_role.mention} has reached the limit of 2 delays of game.\n\n'
+                                                    f'The game is over! {away_role.mention} has won!\n\n'
+                                                    f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
+                            score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
+                            return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                        else:
+                            await self.bot.write(f"UPDATE games SET "
+                                                 f"gamestate = 'MIDFIELD', "
+                                                 f"awayscore = awayscore + 1, "
+                                                 f"homedelays = homedelays + 1, "
+                                                 f"waitingon = 'AWAY', "
+                                                 f"def_off = 'DEFENSE',"
+                                                 f"deadline = 'now'::timestamp + INTERVAL '1 day' "
+                                                 f"WHERE gameid = {game['gameid']}")
+                            game_channel = self.bot.get_channel(gameinfo['channelid'])
+                            home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                            away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                            # This variable is shortened because the non shortened one was too spammy
+                            m = await self.bot.db.fetchrow(f'SELECT seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2 FROM games WHERE gameid = {game["gameid"]}')
+                            game_time = seconds_to_time(m["seconds"], m["extratime1"], m["extratime2"])
+                            await game_channel.send(f'{home_role.mention} has taken their first delay of game.\n\n'
+                                                    f'They have automatically conceded a goal. Ball is placed back at midfield, {home_role.mention} kickoff.\n\n'
+                                                    f'{m["hometeam"].upper()} {m["homescore"]}-{m["awayscore"]} {m["awayteam"].upper()} '
+                                                    f'{game_time}\n\n'
+                                                    f'Waiting on {away_role.mention} for defensive number')
+                            defensive_user_id = await self.bot.db.fetchval(
+                                f"SELECT (CASE WHEN substitute IS NULL THEN manager ELSE substitute END) FROM teams WHERE teamid = '{m['awayteam']}'")
+                            defensive_user = self.bot.get_user(defensive_user_id)
+                            await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
+                                                                               awayteam=m['awayteam'].upper(),
+                                                                               homescore=m['homescore'],
+                                                                               awayscore=m['awayscore'],
+                                                                               game_time=game_time))
+                            waitingon = 'AWAY'
                     else:
-                        await self.bot.write(f"UPDATE games SET "
-                                             f"gamestate = 'FORFEIT', "
-                                             f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END), "
-                                             f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END), "
-                                             f"awaydelays = 3 "
-                                             f"WHERE gameid = {game['gameid']}")
-                        game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
-                        await game_channel.send(
-                            f'{away_role.mention} has surpassed the deadline during a shootout. The game has been automatically forfeited.\n\n'
-                            f'The game is over! {home_role.mention} has won!\n\n'
-                            f'The score is 0-3.')
-                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
-                        return await score_channel.send(
-                            f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
-                if gameinfo['waitingon'] == 'HOME':
-                    if gameinfo['homedelays'] == 2:
-                        await self.bot.write(f"UPDATE games SET "
-                                             f"gamestate = 'FORFEIT', "
-                                             f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
-                                             f"homescore = (CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 0 END), "
-                                             f"homedelays = 3 "
-                                             f"WHERE gameid = {game['gameid']}")
-                        game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
-                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
-                        await game_channel.send(f'{home_role.mention} has reached the limit of 3 delays of game.\n\n'
-                                                f'The game is over! {away_role.mention} has won!\n\n'
-                                                f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
-                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                        return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
-                    else:
-                        await self.bot.write(f"UPDATE games SET "
-                                             f"gamestate = 'MIDFIELD', "
-                                             f"awayscore = awayscore + 1, "
-                                             f"homedelays = homedelays + 1, "
-                                             f"waitingon = 'AWAY', "
-                                             f"def_off = 'DEFENSE',"
-                                             f"deadline = 'now'::timestamp + INTERVAL '1 day' "
-                                             f"WHERE gameid = {game['gameid']}")
-                        game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
-                        # This variable is shortened because the non shortened one was too spammy
-                        m = await self.bot.db.fetchrow(f'SELECT seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2 FROM games WHERE gameid = {game["gameid"]}')
-                        game_time = seconds_to_time(m["seconds"], m["extratime1"], m["extratime2"])
-                        await game_channel.send(f'{home_role.mention} has taken their {"first" if gameinfo["homedelays"] == 0 else "second"} delay of game.\n\n'
-                                                f'They have automatically conceded a goal. Ball is placed back at midfield, {home_role.mention} kickoff.\n\n'
-                                                f'{m["hometeam"].upper()} {m["homescore"]}-{m["awayscore"]} {m["awayteam"].upper()} '
-                                                f'{game_time}\n\n'
-                                                f'Waiting on {away_role.mention} for defensive number')
-                        defensive_user_id = await self.bot.db.fetchval(
-                            f"SELECT (CASE WHEN substitute IS NULL THEN manager ELSE substitute END) FROM teams WHERE teamid = '{m['awayteam']}'")
-                        defensive_user = self.bot.get_user(defensive_user_id)
-                        await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
-                                                                           awayteam=m['awayteam'].upper(),
-                                                                           homescore=m['homescore'],
-                                                                           awayscore=m['awayscore'],
-                                                                           game_time=game_time))
-                        waitingon = 'AWAY'
-                else:
-                    if gameinfo['awaydelays'] == 2:
-                        await self.bot.write(f"UPDATE games SET "
-                                             f"gamestate = 'FORFEIT', "
-                                             f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END, "
-                                             f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END, "
-                                             f"awaydelays = 3 "
-                                             f"WHERE gameid = {game['gameid']}")
-                        game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
-                        scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
-                        await game_channel.send(f'{away_role.mention} has reached the limit of 3 delays of game.\n\n'
-                                                f'The game is over! {home_role.mention} has won!\n\n'
-                                                f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
-                        score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                        return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
-                    else:
-                        await self.bot.write(f"UPDATE games SET "
-                                             f"gamestate = 'MIDFIELD', "
-                                             f"homescore = homescore + 1, "
-                                             f"awaydelays = awaydelays + 1, "
-                                             f"waitingon = 'HOME', "
-                                             f"def_off = 'DEFENSE',"
-                                             f"deadline = 'now'::timestamp + INTERVAL '1 day' "
-                                             f"WHERE gameid = {game['gameid']}")
-                        game_channel = self.bot.get_channel(gameinfo['channelid'])
-                        home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
-                        away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
-                        # This variable is shortened because the non shortened one was too spammy
-                        m = await self.bot.db.fetchrow(
-                            f'SELECT seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2 FROM games WHERE gameid = {game["gameid"]}')
-                        game_time = seconds_to_time(m["seconds"], m["extratime1"], m["extratime2"])
-                        await game_channel.send(
-                            f'{away_role.mention} has taken their {"first" if gameinfo["awaydelays"] == 0 else "second"} delay of game.\n\n'
-                            f'They have automatically conceded a goal. Ball is placed back at midfield, {away_role.mention} kickoff.\n\n'
-                            f'{m["hometeam"].upper()} {m["homescore"]}-{m["awayscore"]} {m["awayteam"].upper()} '
-                            f'{game_time}\n\n'
-                            f'Waiting on {home_role.mention} for defensive number')
-                        defensive_user_id = await self.bot.db.fetchval(
-                            f"SELECT CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['hometeam']}'")
-                        defensive_user = self.bot.get_user(defensive_user_id)
-                        await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
-                                                                           awayteam=m['awayteam'].upper(),
-                                                                           homescore=m['homescore'],
-                                                                           awayscore=m['awayscore'],
-                                                                           game_time=game_time))
-                        waitingon = 'HOME'
-                try:
-                    self.defcache[gameinfo['channelid']] = (self.offcache[gameinfo['channelid']][0], self.offcache[gameinfo['channelid']][1], self.offcache[gameinfo['channelid']][2], waitingon, self.offcache[gameinfo['channelid']][4])
-                    del self.offcache[gameinfo['channelid']]
-                except KeyError:
-                    pass
+                        if gameinfo['awaydelays'] == 2:
+                            await self.bot.write(f"UPDATE games SET "
+                                                 f"gamestate = 'FORFEIT', "
+                                                 f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END, "
+                                                 f"homescore = CASE WHEN ABS(awayscore-homescore)>2 THEN homescore ELSE 3 END, "
+                                                 f"awaydelays = 3 "
+                                                 f"WHERE gameid = {game['gameid']}")
+                            game_channel = self.bot.get_channel(gameinfo['channelid'])
+                            home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                            away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                            scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['channelid']}")
+                            await game_channel.send(f'{away_role.mention} has reached the limit of 2 delays of game.\n\n'
+                                                    f'The game is over! {home_role.mention} has won!\n\n'
+                                                    f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
+                            score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
+                            return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                        else:
+                            await self.bot.write(f"UPDATE games SET "
+                                                 f"gamestate = 'MIDFIELD', "
+                                                 f"homescore = homescore + 1, "
+                                                 f"awaydelays = awaydelays + 1, "
+                                                 f"waitingon = 'HOME', "
+                                                 f"def_off = 'DEFENSE',"
+                                                 f"deadline = 'now'::timestamp + INTERVAL '1 day' "
+                                                 f"WHERE gameid = {game['gameid']}")
+                            game_channel = self.bot.get_channel(gameinfo['channelid'])
+                            home_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['homeroleid'])
+                            away_role = nextcord.utils.get(game_channel.guild.roles, id=gameinfo['awayroleid'])
+                            # This variable is shortened because the non shortened one was too spammy
+                            m = await self.bot.db.fetchrow(
+                                f'SELECT seconds, awayscore, homescore, hometeam, awayteam, extratime1, extratime2 FROM games WHERE gameid = {game["gameid"]}')
+                            game_time = seconds_to_time(m["seconds"], m["extratime1"], m["extratime2"])
+                            await game_channel.send(
+                                f'{away_role.mention} has taken their first delay of game.\n\n'
+                                f'They have automatically conceded a goal. Ball is placed back at midfield, {away_role.mention} kickoff.\n\n'
+                                f'{m["hometeam"].upper()} {m["homescore"]}-{m["awayscore"]} {m["awayteam"].upper()} '
+                                f'{game_time}\n\n'
+                                f'Waiting on {home_role.mention} for defensive number')
+                            defensive_user_id = await self.bot.db.fetchval(
+                                f"SELECT CASE WHEN substitute IS NULL THEN manager ELSE substitute END FROM teams WHERE teamid = '{m['hometeam']}'")
+                            defensive_user = self.bot.get_user(defensive_user_id)
+                            await defensive_user.send(DEFENSIVE_MESSAGE.format(hometeam=m['hometeam'].upper(),
+                                                                               awayteam=m['awayteam'].upper(),
+                                                                               homescore=m['homescore'],
+                                                                               awayscore=m['awayscore'],
+                                                                               game_time=game_time))
+                            waitingon = 'HOME'
+                    try:
+                        self.defcache[gameinfo['channelid']] = (self.offcache[gameinfo['channelid']][0], self.offcache[gameinfo['channelid']][1], self.offcache[gameinfo['channelid']][2], waitingon, self.offcache[gameinfo['channelid']][4])
+                        del self.offcache[gameinfo['channelid']]
+                    except KeyError:
+                        pass
+            except Exception:
+                continue
 
     @check_for_deadline.before_loop
     async def before_start_checking_deadline(self):
