@@ -135,7 +135,7 @@ class Listener(commands.Cog):
                             return await score_channel.send(
                                 f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
                     if gameinfo['waitingon'] == 'HOME':
-                        if gameinfo['homedelays'] == 2:
+                        if gameinfo['homedelays']:
                             await self.bot.write(f"UPDATE games SET "
                                                  f"gamestate = 'FORFEIT', "
                                                  f"awayscore = (CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 3 END), "
@@ -181,7 +181,7 @@ class Listener(commands.Cog):
                                                                                game_time=game_time))
                             waitingon = 'AWAY'
                     else:
-                        if gameinfo['awaydelays'] == 2:
+                        if gameinfo['awaydelays']:
                             await self.bot.write(f"UPDATE games SET "
                                                  f"gamestate = 'FORFEIT', "
                                                  f"awayscore = CASE WHEN ABS(awayscore-homescore)>2 THEN awayscore ELSE 0 END, "
