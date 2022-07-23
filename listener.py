@@ -95,7 +95,8 @@ class Listener(commands.Cog):
                     gameinfo = await self.bot.db.fetchrow(f'SELECT waitingon, homeroleid, awayroleid, channelid FROM games WHERE gameid = {game["gameid"]}')
                     channel = self.bot.get_channel(gameinfo['channelid'])
                     user_to_ping = nextcord.utils.get(channel.guild.roles, id=gameinfo['homeroleid'] if gameinfo['waitingon'] == 'HOME' else gameinfo['awayroleid'])
-                    return await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\nFailure to submit will lead to concession of a goal and/or a forfeit.')
+                    await channel.send(f'{user_to_ping.mention} You have about 12 hours left on your deadline.\nFailure to submit will lead to concession of a goal and/or a forfeit.')
+                    continue
 
                 if game['deadline'] < nextcord.utils.utcnow():
                     gameinfo = await self.bot.db.fetchrow(f'SELECT gamestate, waitingon, hometeam, awayteam, homedelays, awaydelays, channelid, homeroleid, awayroleid FROM games WHERE gameid = {game["gameid"]}')
@@ -115,7 +116,8 @@ class Listener(commands.Cog):
                                                     f'The score is 0-3.')
                             scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
                             score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                            return await score_channel.send(f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            await score_channel.send(f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            continue
                         else:
                             await self.bot.write(f"UPDATE games SET "
                                                  f"gamestate = 'FORFEIT', "
@@ -132,8 +134,9 @@ class Listener(commands.Cog):
                                 f'The score is 0-3.')
                             score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
                             scores = await self.bot.db.fetchrow(f"SELECT homescore, awayscore FROM games WHERE channelid = {gameinfo['chennalid']}")
-                            return await score_channel.send(
+                            await score_channel.send(
                                 f'SHOOTOUT FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            continue
                     if gameinfo['waitingon'] == 'HOME':
                         if gameinfo['homedelays']:
                             await self.bot.write(f"UPDATE games SET "
@@ -150,7 +153,8 @@ class Listener(commands.Cog):
                                                     f'The game is over! {away_role.mention} has won!\n\n'
                                                     f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
                             score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                            return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            continue
                         else:
                             await self.bot.write(f"UPDATE games SET "
                                                  f"gamestate = 'MIDFIELD', "
@@ -196,7 +200,8 @@ class Listener(commands.Cog):
                                                     f'The game is over! {home_role.mention} has won!\n\n'
                                                     f'The score is {scores["homescore"]}-{scores["awayscore"]}.')
                             score_channel = nextcord.utils.get(game_channel.guild.channels, name='scores')
-                            return await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            await score_channel.send(f'AUTOMATIC FORFEIT: {home_role.mention} {scores["homescore"]}-{scores["awayscore"]} {away_role.mention}')
+                            continue
                         else:
                             await self.bot.write(f"UPDATE games SET "
                                                  f"gamestate = 'MIDFIELD', "
